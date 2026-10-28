@@ -1,0 +1,283 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>forge.lint</title><meta name="description" content="Documentation for forge.lint"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="index.html" class="title">forge.lint</a>
+<div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<h1>forge.lint</h1></div>
+<div class="tsd-panel tsd-typography"><div align="center">
+<h1 id="forgelint" class="tsd-anchor-link">ForgeLint<a href="#forgelint" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>Lints and formats ForgeScript code. Catches unknown functions, wrong argument counts and unbalanced brackets before your bot runs them.</p>
+<p><a href="https://github.com/Daaisukidayo/ForgeLint/"><img src="https://img.shields.io/github/package-json/v/Daaisukidayo/ForgeLint/main?label=forge.lint&color=5c16d4" alt="forge.lint"></a>
+<a href="https://github.com/tryforge/ForgeScript/"><img src="https://img.shields.io/github/package-json/v/tryforge/ForgeScript/main?label=@tryforge/forgescript&color=5c16d4" alt="@tryforge/forgescript"></a>
+<a href="https://discord.gg/yFW5Ju6JP8"><img src="https://img.shields.io/discord/997899472610795580?logo=discord" alt="Discord"></a></p>
+</div>
+<hr>
+<h2 id="contents" class="tsd-anchor-link">Contents<a href="#contents" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ol>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#rules">Rules</a></li>
+<li><a href="#formatting">Formatting</a></li>
+<li><a href="#where-it-looks">Where it looks</a></li>
+<li><a href="#turning-rules-off">Turning rules off</a></li>
+<li><a href="#config">Config</a></li>
+<li><a href="#as-an-extension">As an extension</a></li>
+<li><a href="#gotchas">Gotchas</a></li>
+</ol>
+<h3 align="center">Installation</h3><hr>
+<pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">i</span><span class="hl-1"> </span><span class="hl-3">-D</span><span class="hl-1"> </span><span class="hl-2">forge.lint</span><br/><span class="hl-4"># or</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">i</span><span class="hl-1"> </span><span class="hl-3">-D</span><span class="hl-1"> </span><span class="hl-2">github:Daaisukidayo/ForgeLint#main</span>
+</code><button type="button">Copy</button></pre>
+
+<p>It needs <strong>ForgeScript</strong> and <strong>Node.js 22</strong> or newer. Run it in your bot's folder:</p>
+<pre><code class="bash"><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">forgelint</span>
+</code><button type="button">Copy</button></pre>
+
+<pre><code><span class="hl-5">ForgeLint</span><span class="hl-1">  </span><span class="hl-6">8</span><span class="hl-1"> </span><span class="hl-5">codes</span><span class="hl-1"> </span><span class="hl-3">in</span><span class="hl-1"> </span><span class="hl-6">6</span><span class="hl-1"> </span><span class="hl-5">files</span><span class="hl-1">, </span><span class="hl-6">1125</span><span class="hl-1"> </span><span class="hl-5">functions</span><span class="hl-1"> </span><span class="hl-5">known</span><br/><br/><span class="hl-5">commands</span><span class="hl-1">/</span><span class="hl-3">arguments</span><span class="hl-1">.</span><span class="hl-5">js</span><br/><span class="hl-1">  </span><span class="hl-6">6</span><span class="hl-1">:</span><span class="hl-6">28</span><span class="hl-1">   </span><span class="hl-5">error</span><span class="hl-1">    </span><span class="hl-5">$let</span><span class="hl-1"> </span><span class="hl-5">takes</span><span class="hl-1"> </span><span class="hl-5">at</span><span class="hl-1"> </span><span class="hl-5">most</span><span class="hl-1"> </span><span class="hl-6">2</span><span class="hl-1"> </span><span class="hl-3">arguments</span><span class="hl-1">, </span><span class="hl-5">got</span><span class="hl-1"> </span><span class="hl-6">3</span><span class="hl-1">: </span><span class="hl-5">$let</span><span class="hl-1">[</span><span class="hl-5">key</span><span class="hl-1">;</span><span class="hl-5">value</span><span class="hl-1">]  </span><span class="hl-5">too</span><span class="hl-1">-</span><span class="hl-5">many</span><span class="hl-1">-</span><span class="hl-3">arguments</span><br/><span class="hl-1">  </span><span class="hl-6">8</span><span class="hl-1">:</span><span class="hl-6">9</span><span class="hl-1">    </span><span class="hl-5">error</span><span class="hl-1">    </span><span class="hl-5">$addField</span><span class="hl-1"> </span><span class="hl-5">needs</span><span class="hl-1"> </span><span class="hl-5">at</span><span class="hl-1"> </span><span class="hl-5">least</span><span class="hl-1"> </span><span class="hl-6">2</span><span class="hl-1"> </span><span class="hl-3">arguments</span><span class="hl-1">, </span><span class="hl-5">got</span><span class="hl-1"> </span><span class="hl-6">1</span><span class="hl-1">: </span><span class="hl-5">$addField</span><span class="hl-1">[</span><span class="hl-5">name</span><span class="hl-1">;</span><span class="hl-5">value</span><span class="hl-1">;</span><span class="hl-5">inline</span><span class="hl-1">?;</span><span class="hl-5">index</span><span class="hl-1">?]  </span><span class="hl-5">too</span><span class="hl-1">-</span><span class="hl-5">few</span><span class="hl-1">-</span><span class="hl-3">arguments</span><br/><span class="hl-1">  </span><span class="hl-6">12</span><span class="hl-1">:</span><span class="hl-6">17</span><span class="hl-1">  </span><span class="hl-5">error</span><span class="hl-1">    </span><span class="hl-5">Argument</span><span class="hl-1"> </span><span class="hl-2">&quot;number&quot;</span><span class="hl-1"> </span><span class="hl-3">of</span><span class="hl-1"> </span><span class="hl-5">$double</span><span class="hl-1"> </span><span class="hl-5">must</span><span class="hl-1"> </span><span class="hl-5">be</span><span class="hl-1"> </span><span class="hl-5">a</span><span class="hl-1"> </span><span class="hl-5">number</span><span class="hl-1">, </span><span class="hl-5">not</span><span class="hl-1"> </span><span class="hl-2">&quot;two&quot;</span><span class="hl-1">  </span><span class="hl-5">invalid</span><span class="hl-1">-</span><span class="hl-5">argument</span><br/><br/><span class="hl-5">commands</span><span class="hl-1">/</span><span class="hl-5">brackets</span><span class="hl-1">.</span><span class="hl-5">js</span><br/><span class="hl-1">  </span><span class="hl-6">7</span><span class="hl-1">:</span><span class="hl-6">27</span><span class="hl-1">  </span><span class="hl-5">error</span><span class="hl-1">    </span><span class="hl-5">This</span><span class="hl-1"> ] </span><span class="hl-5">closes</span><span class="hl-1"> </span><span class="hl-5">$description</span><span class="hl-1">, </span><span class="hl-5">not</span><span class="hl-1"> </span><span class="hl-5">the</span><span class="hl-1"> [ </span><span class="hl-5">before</span><span class="hl-1"> </span><span class="hl-5">it</span><span class="hl-1">. </span><span class="hl-5">Escape</span><span class="hl-1"> </span><span class="hl-5">it</span><span class="hl-1">: \]  </span><span class="hl-5">unescaped</span><span class="hl-1">-</span><span class="hl-5">bracket</span><br/><span class="hl-1">  </span><span class="hl-6">8</span><span class="hl-1">:</span><span class="hl-6">9</span><span class="hl-1">   </span><span class="hl-5">error</span><span class="hl-1">    </span><span class="hl-5">$footer</span><span class="hl-1">[ </span><span class="hl-5">is</span><span class="hl-1"> </span><span class="hl-5">never</span><span class="hl-1"> </span><span class="hl-5">closed</span><span class="hl-1">. </span><span class="hl-5">Add</span><span class="hl-1"> </span><span class="hl-5">a</span><span class="hl-1"> ]  </span><span class="hl-5">unclosed</span><span class="hl-1">-</span><span class="hl-5">bracket</span><br/><br/><span class="hl-5">commands</span><span class="hl-1">/</span><span class="hl-5">typos</span><span class="hl-1">.</span><span class="hl-5">js</span><br/><span class="hl-1">  </span><span class="hl-6">6</span><span class="hl-1">:</span><span class="hl-6">16</span><span class="hl-1">   </span><span class="hl-5">error</span><span class="hl-1">    </span><span class="hl-5">Unknown</span><span class="hl-1"> </span><span class="hl-3">function</span><span class="hl-1"> </span><span class="hl-0">$sendMesage</span><span class="hl-1">. </span><span class="hl-0">Did</span><span class="hl-1"> </span><span class="hl-0">you</span><span class="hl-1"> </span><span class="hl-0">mean</span><span class="hl-1"> </span><span class="hl-0">$sendMessage</span><span class="hl-1">?  </span><span class="hl-0">unknown</span><span class="hl-1">-</span><span class="hl-0">function</span><br/><span class="hl-1">  12:25  </span><span class="hl-0">error</span><span class="hl-1">    </span><span class="hl-0">Unknown</span><span class="hl-1"> </span><span class="hl-0">function</span><span class="hl-1"> </span><span class="hl-0">$getUserVar</span><span class="hl-1">: </span><span class="hl-0">ForgeScript</span><span class="hl-1"> </span><span class="hl-0">reads</span><span class="hl-1"> </span><span class="hl-0">it</span><span class="hl-1"> </span><span class="hl-0">as</span><span class="hl-1"> </span><span class="hl-0">$get</span><span class="hl-1"> </span><span class="hl-0">followed</span><span class="hl-1"> </span><span class="hl-0">by</span><span class="hl-1"> &quot;</span><span class="hl-0">UserVar</span><span class="hl-1">&quot;. </span><span class="hl-0">Is</span><span class="hl-1"> </span><span class="hl-0">the</span><span class="hl-1"> </span><span class="hl-0">extension</span><span class="hl-1"> </span><span class="hl-0">that</span><span class="hl-1"> </span><span class="hl-0">adds</span><span class="hl-1"> </span><span class="hl-0">it</span><span class="hl-1"> </span><span class="hl-0">installed</span><span class="hl-1">?  </span><span class="hl-0">unknown</span><span class="hl-1">-</span><span class="hl-0">function</span><br/><br/><span class="hl-1">✗ 7 </span><span class="hl-0">errors</span><span class="hl-1"> (0.68 </span><span class="hl-5">s</span><span class="hl-1">)</span>
+</code><button>Copy</button></pre>
+
+<p>If it finds an error, it exits with code 1. Run it before your bot starts, and a broken bot won't start:</p>
+<pre><code class="json"><span class="hl-2">&quot;scripts&quot;</span><span class="hl-1">: { </span><span class="hl-7">&quot;start&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;forgelint &amp;&amp; node index.js&quot;</span><span class="hl-1"> }</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>npx forgelint init</code> creates a config file. You only need one to change the defaults.</p>
+<h3 align="center">Rules</h3><hr>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Default</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>unknown-function</code></strong></td>
+<td>error</td>
+<td><code>$sendMesage</code>, or <code>$getUserVar</code> without ForgeDB installed. Suggests the closest name.</td>
+</tr>
+<tr>
+<td><strong><code>glued-name</code></strong></td>
+<td>warning</td>
+<td><code>$pingms</code> runs <code>$ping</code> and prints <code>ms</code>. Often done on purpose.</td>
+</tr>
+<tr>
+<td><strong><code>too-many-arguments</code></strong></td>
+<td>error</td>
+<td><code>$get[a;b]</code>. The code won't compile.</td>
+</tr>
+<tr>
+<td><strong><code>too-few-arguments</code></strong></td>
+<td>error</td>
+<td><code>$addField[Coins]</code>.</td>
+</tr>
+<tr>
+<td><strong><code>missing-brackets</code></strong></td>
+<td>error</td>
+<td><code>$get</code> without brackets. The code won't compile.</td>
+</tr>
+<tr>
+<td><strong><code>unexpected-brackets</code></strong></td>
+<td>warning</td>
+<td><code>$ping[x]</code>: <code>$ping</code> takes no arguments, so <code>[x]</code> is printed as text.</td>
+</tr>
+<tr>
+<td><strong><code>unclosed-bracket</code></strong></td>
+<td>error</td>
+<td><code>$footer[text</code> without a closing <code>]</code>. The code won't compile.</td>
+</tr>
+<tr>
+<td><strong><code>unescaped-bracket</code></strong></td>
+<td>error</td>
+<td><code>$description[[Docs](url)]</code>: the first <code>]</code> closes <code>$description</code>. Escape it as <code>\]</code>.</td>
+</tr>
+<tr>
+<td><strong><code>stray-bracket</code></strong></td>
+<td>warning</td>
+<td>A top-level <code>]</code> that closes nothing, usually left over after an unescaped <code>]</code>.</td>
+</tr>
+<tr>
+<td><strong><code>invalid-argument</code></strong></td>
+<td>error</td>
+<td>Text that can't be the argument's type: <code>$round[abc]</code>, <code>$addField[a;b;maybe]</code>, a wrong enum value, an empty required channel.</td>
+</tr>
+<tr>
+<td><strong><code>deprecated</code></strong></td>
+<td>warning</td>
+<td>A deprecated function.</td>
+</tr>
+<tr>
+<td><strong><code>function-case</code></strong></td>
+<td>info</td>
+<td><code>$authorid</code> instead of <code>$authorID</code>. <code>--fix</code> fixes it.</td>
+</tr>
+</tbody>
+</table>
+<h3 align="center">Formatting</h3><hr>
+<pre><code class="bash"><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">forgelint</span><span class="hl-1"> </span><span class="hl-3">--fix</span><span class="hl-1">     </span><span class="hl-4"># formats files in place, then checks them</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">forgelint</span><span class="hl-1"> </span><span class="hl-3">--check</span><span class="hl-1">   </span><span class="hl-4"># also fails on unformatted files</span>
+</code><button type="button">Copy</button></pre>
+
+<p>The formatter only:</p>
+<ul>
+<li>writes function names in their declared case: <code>$AUTHORID</code> → <code>$authorID</code>,</li>
+<li>indents lines that start with a function, <code>;</code> or <code>]</code> by nesting depth, lining up a function's <code>;</code> and <code>]</code> with the function itself,</li>
+<li>removes trailing whitespace after code and spaces on blank lines between code.</li>
+</ul>
+<p>Lines that start with text stay as written, so your messages don't change. In code with broken brackets, only the names get fixed.</p>
+<pre><code><span class="hl-5">$LET</span><span class="hl-1">[</span><span class="hl-5">roll</span><span class="hl-1">;</span><span class="hl-5">$randomNumber</span><span class="hl-1">[</span><span class="hl-6">1</span><span class="hl-1">;</span><span class="hl-6">7</span><span class="hl-1">]]         </span><span class="hl-5">$let</span><span class="hl-1">[</span><span class="hl-5">roll</span><span class="hl-1">;</span><span class="hl-5">$randomNumber</span><span class="hl-1">[</span><span class="hl-6">1</span><span class="hl-1">;</span><span class="hl-6">7</span><span class="hl-1">]]</span><br/><span class="hl-5">$if</span><span class="hl-1">[</span><span class="hl-5">$get</span><span class="hl-1">[</span><span class="hl-5">roll</span><span class="hl-1">]==</span><span class="hl-6">6</span><span class="hl-1">;                    </span><span class="hl-5">$if</span><span class="hl-1">[</span><span class="hl-5">$get</span><span class="hl-1">[</span><span class="hl-5">roll</span><span class="hl-1">]==</span><span class="hl-6">6</span><span class="hl-1">;</span><br/><span class="hl-5">$title</span><span class="hl-1">[</span><span class="hl-5">Six</span><span class="hl-1">!]                    →         </span><span class="hl-5">$title</span><span class="hl-1">[</span><span class="hl-5">Six</span><span class="hl-1">!]</span><br/><span class="hl-1">    </span><span class="hl-5">$COLOR</span><span class="hl-1">[</span><span class="hl-5">Gold</span><span class="hl-1">]                          </span><span class="hl-5">$color</span><span class="hl-1">[</span><span class="hl-5">Gold</span><span class="hl-1">]</span><br/><span class="hl-1">  ;                                   ;</span><br/><span class="hl-1">        </span><span class="hl-5">$title</span><span class="hl-1">[</span><span class="hl-5">You</span><span class="hl-1"> </span><span class="hl-5">rolled</span><span class="hl-1">]                </span><span class="hl-5">$title</span><span class="hl-1">[</span><span class="hl-5">You</span><span class="hl-1"> </span><span class="hl-5">rolled</span><span class="hl-1">]</span><br/><span class="hl-1">      ]                               ]</span>
+</code><button>Copy</button></pre>
+
+<p>Top-level lines are indented one level deeper than their <code>code:</code> line, and the closing <code>`</code> lines up with it. With <code>alignToKey: false</code>, each code keeps its own indent instead. The <code>indent</code> option sets the size of one level.</p>
+<h3 align="center">Where it looks</h3><hr>
+<p>ForgeLint checks the <code>code:</code> strings in <code>.js</code> and <code>.ts</code> files (and <code>.cjs</code>, <code>.mjs</code>, <code>.cts</code>, <code>.mts</code>) in the config's folder. It skips <code>node_modules</code> and folders whose names start with a dot, as well as <code>dist</code>, <code>build</code>, <code>docs</code> and <code>coverage</code> at the top level. The <code>${...}</code> parts of template strings aren't checked.</p>
+<p>Functions it knows about:</p>
+<ul>
+<li><strong>ForgeScript</strong>, the version your bot has installed,</li>
+<li><strong>extensions</strong>: dependencies in your <code>package.json</code> that depend on ForgeScript. They aren't started, so no database connects,</li>
+<li><strong>your files</strong>: functions created with <code>new ForgeFunction</code>, <code>new NativeFunction</code> or <code>{ name, params, code }</code>,</li>
+<li>the config's <code>functions</code>, <code>natives</code> and <code>known</code>.</li>
+</ul>
+<h3 align="center">Turning rules off</h3><hr>
+<p>For every file, in the config:</p>
+<pre><code class="js"><span class="hl-8">rules</span><span class="hl-1">: { </span><span class="hl-2">&quot;function-case&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;off&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;glued-name&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;error&quot;</span><span class="hl-1"> }</span>
+</code><button type="button">Copy</button></pre>
+
+<p>In code, with <code>$c</code>:</p>
+<pre><code><span class="hl-5">$c</span><span class="hl-1">[</span><span class="hl-5">forgelint</span><span class="hl-1">-</span><span class="hl-5">disable</span><span class="hl-1">-</span><span class="hl-5">next</span><span class="hl-1">-</span><span class="hl-5">line</span><span class="hl-1"> </span><span class="hl-5">unknown</span><span class="hl-1">-</span><span class="hl-3">function</span><span class="hl-1">]</span><br/><span class="hl-0">$runtimeFunction</span><br/><br/><span class="hl-0">$c</span><span class="hl-1">[</span><span class="hl-0">forgelint</span><span class="hl-1">-</span><span class="hl-0">disable</span><span class="hl-1">]</span><br/><span class="hl-1">...</span><span class="hl-0">all</span><span class="hl-1"> </span><span class="hl-0">rules</span><span class="hl-1"> </span><span class="hl-0">off</span><span class="hl-1"> </span><span class="hl-0">until</span><span class="hl-1">...</span><br/><span class="hl-0">$c</span><span class="hl-1">[</span><span class="hl-0">forgelint</span><span class="hl-1">-</span><span class="hl-0">enable</span><span class="hl-1">]</span><br/><br/><span class="hl-0">$pingms</span><span class="hl-1"> </span><span class="hl-0">$c</span><span class="hl-1">[</span><span class="hl-0">forgelint</span><span class="hl-1">-</span><span class="hl-0">disable</span><span class="hl-1">-</span><span class="hl-0">line</span><span class="hl-1"> </span><span class="hl-0">glued</span><span class="hl-1">-</span><span class="hl-0">name</span><span class="hl-1">]</span>
+</code><button>Copy</button></pre>
+
+<p>Without rule names, a directive applies to every rule. Separate several rule names with spaces or commas.</p>
+<h3 align="center">Config</h3><hr>
+<p>Put <code>forgelint.config.js</code> next to your <code>package.json</code>. Paths in it are relative to its folder. Every option is optional, and options that take a list also accept a single string.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>include</code></strong></td>
+<td>Files and folders to check. Defaults to the config's folder.</td>
+</tr>
+<tr>
+<td><strong><code>exclude</code></strong></td>
+<td>Names or paths to skip, such as <code>[&quot;tests&quot;, &quot;src/legacy&quot;]</code>.</td>
+</tr>
+<tr>
+<td><strong><code>properties</code></strong></td>
+<td>Keys that hold ForgeScript code. Defaults to <code>[&quot;code&quot;]</code>.</td>
+</tr>
+<tr>
+<td><strong><code>functions</code></strong></td>
+<td>Folders with custom functions, like the <code>functions</code> option of <code>ForgeClient</code>. They must be compiled <code>.js</code>.</td>
+</tr>
+<tr>
+<td><strong><code>natives</code></strong></td>
+<td>Folders with your <code>NativeFunction</code>s, as compiled <code>.js</code>. Use it for native functions outside <code>include</code>, arguments built in code, and enum values.</td>
+</tr>
+<tr>
+<td><strong><code>extensions</code></strong></td>
+<td>Packages whose functions are known. Defaults to every dependency that depends on ForgeScript.</td>
+</tr>
+<tr>
+<td><strong><code>known</code></strong></td>
+<td>Functions created at runtime, such as <code>[&quot;$myFunction&quot;]</code>. They are never reported as unknown.</td>
+</tr>
+<tr>
+<td><strong><code>rules</code></strong></td>
+<td><code>&quot;error&quot;</code>, <code>&quot;warning&quot;</code>, <code>&quot;info&quot;</code> or <code>&quot;off&quot;</code> for each rule.</td>
+</tr>
+<tr>
+<td><strong><code>indent</code></strong></td>
+<td>Spaces per indent level, or <code>&quot;tab&quot;</code>. Defaults to the indent the code already uses.</td>
+</tr>
+<tr>
+<td><strong><code>alignToKey</code></strong></td>
+<td>Indents top-level code lines one level under <code>code:</code> and lines the closing <code>`</code> up with it. Defaults to <code>true</code>.</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="bash"><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">forgelint</span><span class="hl-1"> [paths...] [--fix] [--check] [--json] [--config &lt;file&gt;]</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">forgelint</span><span class="hl-1"> </span><span class="hl-2">init</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 align="center">As an extension</h3><hr>
+<p>Checks every command, slash command and custom function right before the bot logs in, with exactly the functions your client loaded.</p>
+<pre><code class="js"><span class="hl-3">const</span><span class="hl-1"> { </span><span class="hl-9">ForgeClient</span><span class="hl-1"> } = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&quot;@tryforge/forgescript&quot;</span><span class="hl-1">)</span><br/><span class="hl-3">const</span><span class="hl-1"> { </span><span class="hl-9">ForgeLint</span><span class="hl-1"> } = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&quot;forge.lint&quot;</span><span class="hl-1">)</span><br/><br/><span class="hl-3">const</span><span class="hl-1"> </span><span class="hl-9">forgeLint</span><span class="hl-1"> = </span><span class="hl-3">new</span><span class="hl-1"> </span><span class="hl-0">ForgeLint</span><span class="hl-1">({</span><br/><span class="hl-1">    </span><span class="hl-5">rules:</span><span class="hl-1"> { </span><br/><span class="hl-1">        </span><span class="hl-2">&quot;function-case&quot;</span><span class="hl-5">:</span><span class="hl-1"> </span><span class="hl-2">&quot;off&quot;</span><span class="hl-1"> </span><br/><span class="hl-1">    },</span><br/><span class="hl-1">})</span><br/><br/><span class="hl-3">const</span><span class="hl-1"> </span><span class="hl-9">client</span><span class="hl-1"> = </span><span class="hl-3">new</span><span class="hl-1"> </span><span class="hl-0">ForgeClient</span><span class="hl-1">({</span><br/><span class="hl-1">    </span><span class="hl-5">extensions:</span><span class="hl-1"> [</span><span class="hl-5">forgeLint</span><span class="hl-1">],</span><br/><span class="hl-1">    </span><span class="hl-4">// ...</span><br/><span class="hl-1">})</span>
+</code><button type="button">Copy</button></pre>
+
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>check</code></strong></td>
+<td>Checks the code before logging in. Defaults to <code>true</code>.</td>
+</tr>
+<tr>
+<td><strong><code>rules</code></strong></td>
+<td>Same as in the config.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>$lintCode[code;output?]</code></strong></td>
+<td>Returns the problems as JSON, or as lines of text when <code>output</code> is <code>text</code>.</td>
+</tr>
+<tr>
+<td><strong><code>$formatCode[code;indent?]</code></strong></td>
+<td>Returns the formatted code.</td>
+</tr>
+<tr>
+<td><strong><code>$isCodeValid[code]</code></strong></td>
+<td>Returns <code>true</code> if the code has no errors.</td>
+</tr>
+</tbody>
+</table>
+<p>The code argument is resolved before the function runs, so pass it through <code>$message</code> or a variable, or escape each <code>$</code> as <code>\$</code>. For example, <code>!lint $sendMesage[hi]</code> → <code>$lintCode[$message]</code>.</p>
+<h3 align="center">Gotchas</h3><hr>
+<ul>
+<li><strong><code>]</code> closes a function.</strong> In text, escape it as <code>\]</code>, which is <code>\\]</code> inside a JavaScript template string. <code>[</code> needs no escape.</li>
+<li><strong>In <code>$c[...]</code> comments</strong>, only errors that stop the bot from starting are reported, for example <code>$get</code> without brackets.</li>
+<li><strong>Code built at runtime isn't checked</strong>, and functions created at runtime are unknown: add them to <code>known</code>.</li>
+<li><strong>Native functions read from your <code>.js</code>/<code>.ts</code> source files:</strong> enum values and arguments built in code (<code>args: makeArgs()</code>) aren't checked. Point <code>natives</code> at the compiled <code>.js</code> to check them.</li>
+</ul>
+</div></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#forgelint"><span>Forge<wbr/>Lint</span></a>
+<ul>
+<li><a href="#contents"><span>Contents</span></a></li></ul></div></details></div>
+<div class="site-menu">
+<nav class="tsd-navigation"><a href="modules.html">forge.lint</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>

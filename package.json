@@ -1,0 +1,80 @@
+{
+  "name": "forge.lint",
+  "version": "1.0.0",
+  "description": "Lints and formats ForgeScript code: catches unknown functions, wrong argument counts and unbalanced brackets before your bot runs them.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "forgelint": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "!dist/__tests__",
+    "!dist/@build"
+  ],
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "test": "rimraf dist && tsc && node --test \"dist/__tests__/*.test.js\"",
+    "example": "rimraf dist && tsc && node dist/cli.js --config example/forgelint.config.js",
+    "eslint": "eslint ./src --fix",
+    "prettier": "prettier --write \"./src/**/*\"",
+    "lint": "eslint ./src && prettier --check \"./src/**/*\"",
+    "tidy": "npm run eslint && npm run prettier",
+    "docgen": "npm run tidy && rimraf dist && tsc && typedoc src/index.ts && node dist/@build/docgen && tsc",
+    "commit": "npm run docgen && node dist/@build/commit",
+    "prepublishOnly": "npm run lint && npm run build && node scripts/checkpack.js",
+    "postpublish": "tsc"
+  },
+  "keywords": [
+    "forgescript",
+    "forge.lint",
+    "discord",
+    "discord.js",
+    "lint",
+    "linter",
+    "formatter",
+    "static-analysis",
+    "tryforge",
+    "bdfd",
+    "aoi.js",
+    "aoi",
+    "dbd",
+    "dbd.ts",
+    "dbd.js",
+    "bdscript"
+  ],
+  "license": "GPL-3.0-only",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "peerDependencies": {
+    "@tryforge/forgescript": ">=1.4.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tryforge/forgescript": "^2.8.0",
+    "@types/node": "^26.6.2",
+    "@typescript-eslint/eslint-plugin": "^8.70.1",
+    "@typescript-eslint/parser": "^8.70.1",
+    "discord.js": "^14.27.0",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.9",
+    "rimraf": "^6.1.3",
+    "typedoc": "^0.28.20",
+    "typescript": "^6.0.3"
+  },
+  "author": {
+    "name": "Daaisukidayo",
+    "url": "https://github.com/Daaisukidayo/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Daaisukidayo/ForgeLint.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Daaisukidayo/ForgeLint/issues"
+  }
+}
