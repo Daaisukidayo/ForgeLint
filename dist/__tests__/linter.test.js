@@ -84,6 +84,8 @@ const harness_1 = require("./support/harness");
         const [problem] = (0, harness_1.lint)("Done]");
         strict_1.default.equal(problem.rule, __1.Rule.strayBracket);
         strict_1.default.equal(problem.column, 5);
+        // plain code, like $lintCode gets: 1 `\`
+        strict_1.default.ok(problem.message.endsWith("escape it: \\]"));
     });
 });
 (0, node_test_1.describe)("argument values", () => {

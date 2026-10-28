@@ -13,6 +13,8 @@ export interface IEmbedded {
     isLineBreak: (index: number) => boolean
     /** indentation of the file line the code starts on */
     indent: string
+    /** how an escaped `]` is written here: `\\]` in a JS string, `\]` in `String.raw` */
+    escapedBracket: string
 }
 
 /** what a `${...}` reads as: no `$`, `[`, `]`, `;` or `\` to trip anything */
@@ -55,8 +57,9 @@ export class CodeBuilder {
     /**
      * @param end file offset the code ends at
      * @param start file offset it starts at, for its indentation
+     * @param raw `String.raw`, so a `\` is written as is
      */
-    public build(end: number, start: number): IEmbedded {
+    public build(end: number, start: number, raw: boolean): IEmbedded {
         const { code, map, source } = this
         map.push(end)
 
@@ -66,6 +69,7 @@ export class CodeBuilder {
             isLineBreak: (index) =>
                 code[index] === "\n" && (source[map[index]] === "\n" || source[map[index]] === "\r"),
             indent: indentAt(source, start),
+            escapedBracket: raw ? "\\]" : "\\\\]",
         }
     }
 }
@@ -130,7 +134,7 @@ export function cook(source: string, literal: ILiteral): IEmbedded {
         }
     }
 
-    return builder.build(literal.end, literal.start)
+    return builder.build(literal.end, literal.start, literal.raw)
 }
 
 /** @returns the problems w/ the file's offsets, lines & columns */

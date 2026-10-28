@@ -88,7 +88,7 @@ export function checkText(text: string, codes: IEmbedded[], linter: Linter, form
     const edits: IEdit[] = []
 
     for (const embedded of codes) {
-        problems.push(...problemsInFile(linter.lint(embedded.code), embedded, starts))
+        problems.push(...problemsInFile(linter.lint(embedded.code, embedded.escapedBracket), embedded, starts))
         edits.push(...editsInFile(text, embedded, formatter.edits(embedded.code, { ...embedded, alignToKey })))
     }
 

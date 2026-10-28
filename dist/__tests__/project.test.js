@@ -44,6 +44,13 @@ module.exports.default = new NativeFunction({
         const [a] = new __1.Project({}, root).check();
         strict_1.default.deepEqual(a.problems.map((p) => [p.rule, p.line, p.column]), [[__1.Rule.unknownFunction, 3, 9]]);
     });
+    (0, node_test_1.it)("tells how to escape a ] in the file: \\\\] in a JS string, \\] in String.raw", () => {
+        const root = (0, harness_1.folder)({
+            "commands/a.js": "module.exports = [{ code: `$title[[x](y)]` }, { code: String.raw`$title[[x](y)]` }]\n",
+        });
+        const [a] = new __1.Project({}, root).check();
+        strict_1.default.deepEqual(a.problems.filter((p) => p.rule === __1.Rule.unescapedBracket).map((p) => p.message.split(": ")[1]), ["\\\\]", "\\]"]);
+    });
     (0, node_test_1.it)("knows functions its files define", () => {
         const root = (0, harness_1.folder)({
             "functions/give.ts": "export default new ForgeFunction({ name: 'give', params: ['user', 'amount'], code: `$ping` })",

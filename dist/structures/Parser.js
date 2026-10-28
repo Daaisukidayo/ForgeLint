@@ -17,16 +17,19 @@ function flatten(calls) {
 class Parser {
     code;
     registry;
+    escaped;
     index = 0;
     findings = [];
     /** `suggest` is the slow bit, so a name gets it once */
     guesses = new Map();
-    constructor(code, registry) {
+    constructor(code, registry, escaped) {
         this.code = code;
         this.registry = registry;
+        this.escaped = escaped;
     }
-    static parse(code, registry) {
-        const parser = new Parser(code, registry);
+    /** @param escaped how an escaped `]` is written where the code lives, e.g. `\\]` in a JS string */
+    static parse(code, registry, escaped = "\\]") {
+        const parser = new Parser(code, registry, escaped);
         return { calls: parser.top(), findings: parser.findings };
     }
     top() {
@@ -54,7 +57,7 @@ class Parser {
                 if (open)
                     open--;
                 else {
-                    this.find(types_1.Rule.strayBracket, this.index, this.index + 1, "This ] closes nothing, so it's printed as text. If that's intended, escape it: \\]");
+                    this.find(types_1.Rule.strayBracket, this.index, this.index + 1, `This ] closes nothing, so it's printed as text. If that's intended, escape it: ${this.escaped}`);
                 }
             }
             this.index++;
@@ -155,7 +158,7 @@ class Parser {
             }
             if (char === ";" || char === "]") {
                 if (char === "]" && open) {
-                    this.find(types_1.Rule.unescapedBracket, this.index, this.index + 1, `This ] closes ${owner.spelling}, not the [ before it. Escape it: \\]`);
+                    this.find(types_1.Rule.unescapedBracket, this.index, this.index + 1, `This ] closes ${owner.spelling}, not the [ before it. Escape it: ${this.escaped}`);
                 }
                 break;
             }

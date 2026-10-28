@@ -1,6 +1,6 @@
 {
   "name": "forge.lint",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Lints and formats ForgeScript code: catches unknown functions, wrong argument counts and unbalanced brackets before your bot runs them.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

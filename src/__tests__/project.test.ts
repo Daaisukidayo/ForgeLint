@@ -51,6 +51,18 @@ describe("a project", () => {
         )
     })
 
+    it("tells how to escape a ] in the file: \\\\] in a JS string, \\] in String.raw", () => {
+        const root = folder({
+            "commands/a.js": "module.exports = [{ code: `$title[[x](y)]` }, { code: String.raw`$title[[x](y)]` }]\n",
+        })
+
+        const [a] = new Project({}, root).check()
+        assert.deepEqual(
+            a.problems.filter((p) => p.rule === Rule.unescapedBracket).map((p) => p.message.split(": ")[1]),
+            ["\\\\]", "\\]"]
+        )
+    })
+
     it("knows functions its files define", () => {
         const root = folder({
             "functions/give.ts":

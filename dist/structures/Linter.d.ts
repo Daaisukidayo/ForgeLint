@@ -9,8 +9,11 @@ export declare class Linter {
     private readonly rules;
     /** @throws on an unknown rule or setting */
     constructor(registry: FunctionRegistry, rules?: RuleSettings);
-    /** @returns problems, in code order */
-    lint(code: string): IProblem[];
+    /**
+     * @param escaped how an escaped `]` is written where the code lives. Default `\]`, as FS reads it
+     * @returns problems, in code order
+     */
+    lint(code: string, escaped?: string): IProblem[];
     /** @returns `null` = off */
     private severityOf;
     /** @returns what's wrong w/ a call, syntax aside */

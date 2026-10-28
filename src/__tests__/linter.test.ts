@@ -108,6 +108,8 @@ describe("brackets", () => {
 
         assert.equal(problem.rule, Rule.strayBracket)
         assert.equal(problem.column, 5)
+        // plain code, like $lintCode gets: 1 `\`
+        assert.ok(problem.message.endsWith("escape it: \\]"))
     })
 })
 

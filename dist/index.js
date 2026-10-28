@@ -112,7 +112,8 @@ class ForgeLint extends forgescript_1.ForgeExtension {
                 problems: [],
                 codes: 0,
             };
-            const problems = linter.lint(code);
+            // not in a file = can't tell if it was a JS string
+            const problems = linter.lint(code, embedded?.escapedBracket ?? "\\] (\\\\] in a JS string)");
             report.problems.push(...(embedded ? (0, embedded_1.problemsInFile)(problems, embedded, (0, text_1.lineStarts)(source.text)) : problems));
             report.codes++;
             reports.set(key, report);

@@ -71,11 +71,13 @@ export class Parser {
 
     private constructor(
         private readonly code: string,
-        private readonly registry: FunctionRegistry
+        private readonly registry: FunctionRegistry,
+        private readonly escaped: string
     ) {}
 
-    public static parse(code: string, registry: FunctionRegistry): IParsed {
-        const parser = new Parser(code, registry)
+    /** @param escaped how an escaped `]` is written where the code lives, e.g. `\\]` in a JS string */
+    public static parse(code: string, registry: FunctionRegistry, escaped = "\\]"): IParsed {
+        const parser = new Parser(code, registry, escaped)
         return { calls: parser.top(), findings: parser.findings }
     }
 
@@ -108,7 +110,7 @@ export class Parser {
                         Rule.strayBracket,
                         this.index,
                         this.index + 1,
-                        "This ] closes nothing, so it's printed as text. If that's intended, escape it: \\]"
+                        `This ] closes nothing, so it's printed as text. If that's intended, escape it: ${this.escaped}`
                     )
                 }
             }
@@ -235,7 +237,7 @@ export class Parser {
                         Rule.unescapedBracket,
                         this.index,
                         this.index + 1,
-                        `This ] closes ${owner.spelling}, not the [ before it. Escape it: \\]`
+                        `This ] closes ${owner.spelling}, not the [ before it. Escape it: ${this.escaped}`
                     )
                 }
                 break

@@ -152,9 +152,12 @@ export class Linter {
         validateRules(rules)
     }
 
-    /** @returns problems, in code order */
-    public lint(code: string): IProblem[] {
-        const { calls, findings } = Parser.parse(code, this.registry)
+    /**
+     * @param escaped how an escaped `]` is written where the code lives. Default `\]`, as FS reads it
+     * @returns problems, in code order
+     */
+    public lint(code: string, escaped?: string): IProblem[] {
+        const { calls, findings } = Parser.parse(code, this.registry, escaped)
 
         const all = flatten(calls)
         for (const call of all) findings.push(...this.check(code, call))

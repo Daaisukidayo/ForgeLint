@@ -43,8 +43,9 @@ class CodeBuilder {
     /**
      * @param end file offset the code ends at
      * @param start file offset it starts at, for its indentation
+     * @param raw `String.raw`, so a `\` is written as is
      */
-    build(end, start) {
+    build(end, start, raw) {
         const { code, map, source } = this;
         map.push(end);
         return {
@@ -52,6 +53,7 @@ class CodeBuilder {
             map,
             isLineBreak: (index) => code[index] === "\n" && (source[map[index]] === "\n" || source[map[index]] === "\r"),
             indent: indentAt(source, start),
+            escapedBracket: raw ? "\\]" : "\\\\]",
         };
     }
 }
@@ -116,7 +118,7 @@ function cook(source, literal) {
             i += 2;
         }
     }
-    return builder.build(literal.end, literal.start);
+    return builder.build(literal.end, literal.start, literal.raw);
 }
 /** @returns the problems w/ the file's offsets, lines & columns */
 function problemsInFile(problems, embedded, starts) {

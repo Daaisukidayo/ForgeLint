@@ -54,12 +54,14 @@ export declare function flatten(calls: ICall[]): ICall[];
 export declare class Parser {
     private readonly code;
     private readonly registry;
+    private readonly escaped;
     private index;
     private readonly findings;
     /** `suggest` is the slow bit, so a name gets it once */
     private readonly guesses;
     private constructor();
-    static parse(code: string, registry: FunctionRegistry): IParsed;
+    /** @param escaped how an escaped `]` is written where the code lives, e.g. `\\]` in a JS string */
+    static parse(code: string, registry: FunctionRegistry, escaped?: string): IParsed;
     private top;
     /** At a `$`: reads the call, or reports an unknown name & steps over the `$` */
     private call;

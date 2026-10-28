@@ -46,7 +46,7 @@ commands/arguments.js
   12:17  error    Argument "number" of $double must be a number, not "two"  invalid-argument
 
 commands/brackets.js
-  7:27  error    This ] closes $description, not the [ before it. Escape it: \]  unescaped-bracket
+  7:27  error    This ] closes $description, not the [ before it. Escape it: \\]  unescaped-bracket
   8:9   error    $footer[ is never closed. Add a ]  unclosed-bracket
 
 commands/typos.js
@@ -75,7 +75,7 @@ If it finds an error, it exits with code 1. Run it before your bot starts, and a
 | **`missing-brackets`** | error | `$get` without brackets. The code won't compile. |
 | **`unexpected-brackets`** | warning | `$ping[x]`: `$ping` takes no arguments, so `[x]` is printed as text. |
 | **`unclosed-bracket`** | error | `$footer[text` without a closing `]`. The code won't compile. |
-| **`unescaped-bracket`** | error | `$description[[Docs](url)]`: the first `]` closes `$description`. Escape it as `\]`. |
+| **`unescaped-bracket`** | error | `$description[[Docs](url)]`: the first `]` closes `$description`. Escape it as `\\]` in a JavaScript string. |
 | **`stray-bracket`** | warning | A top-level `]` that closes nothing, usually left over after an unescaped `]`. |
 | **`invalid-argument`** | error | Text that can't be the argument's type: `$round[abc]`, `$addField[a;b;maybe]`, a wrong enum value, an empty required channel. |
 | **`deprecated`** | warning | A deprecated function. |

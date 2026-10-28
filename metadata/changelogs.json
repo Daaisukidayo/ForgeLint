@@ -1,1 +1,1 @@
-{"1.0.0":[{"message":"Init ForgeLint","timestamp":"2026-10-28T20:44:46.817Z","author":"daisukidayo"}]}
+{"1.0.0":[{"message":"Init ForgeLint","timestamp":"2026-10-28T20:44:46.817Z","author":"daisukidayo"}],"1.0.1":[{"message":"Fixed the escape hint for ] in JS strings: \\\\] instead of \\]","timestamp":"2026-10-28T21:29:38.141Z","author":"daisukidayo"}]}

@@ -50,7 +50,7 @@ function checkText(text, codes, linter, formatter, alignToKey = true) {
     const problems = [];
     const edits = [];
     for (const embedded of codes) {
-        problems.push(...(0, embedded_1.problemsInFile)(linter.lint(embedded.code), embedded, starts));
+        problems.push(...(0, embedded_1.problemsInFile)(linter.lint(embedded.code, embedded.escapedBracket), embedded, starts));
         edits.push(...(0, embedded_1.editsInFile)(text, embedded, formatter.edits(embedded.code, { ...embedded, alignToKey })));
     }
     const formatted = (0, Formatter_1.applyEdits)(text, edits);
