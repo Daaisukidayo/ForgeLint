@@ -38,23 +38,19 @@ It needs **ForgeScript** and **Node.js 22** or newer. Run it in your bot's folde
 npx forgelint
 ```
 
+Example output:
+
 ```
-ForgeLint  8 codes in 6 files, 1125 functions known
+ForgeLint  1 code in 1 file, 1122 functions known
 
-commands/arguments.js
-  6:28   error    $let takes at most 2 arguments, got 3. Usage: $let[key;value]  too-many-arguments
-  8:9    error    $addField needs at least 2 arguments, got 1. Usage: $addField[name;value;inline?;index?]  too-few-arguments
-  12:17  error    Argument "number" of $double must be a number, not "two"  invalid-argument
+commands/daily.js
+  3:12  error    Unknown event messageCreat. Did you mean messageCreate?  unknown-event
+  5:40  error    $let takes at most 2 arguments, got 3. Usage: $let[key;value]  too-many-arguments
+  6:9   error    Unknown function $sendMesage. Did you mean $sendMessage?  unknown-function
+  7:45  error    This ] closes $description, not the [ before it. Escape it: \\]  unescaped-bracket
+  7:67  warning  This ] closes nothing and is printed as text. If that's intended, escape it: \\]  stray-bracket
 
-commands/brackets.js
-  7:27  error    This ] closes $description, not the [ before it. Escape it: \\]  unescaped-bracket
-  8:9   error    $footer[ is never closed. Add a ]  unclosed-bracket
-
-commands/typos.js
-  6:16   error    Unknown function $sendMesage. Did you mean $sendMessage?  unknown-function
-  12:25  error    Unknown function $getUserVar: ForgeScript reads it as $get followed by "UserVar". Is the extension that adds it installed?  unknown-function
-
-✗ 7 errors (0.68 s)
+✗ 4 errors, 1 warning (0.75 s)
 ```
 
 On an error it exits with code 1, which keeps a broken bot from starting:
@@ -148,7 +144,7 @@ Without rule names, a directive applies to every rule. Separate several rule nam
 
 <h3 align="center">Config</h3><hr>
 
-Put `forgelint.config.js` (or `.cjs`, `.mjs`) next to your `package.json`. Paths in it are relative to its folder. Every option is optional, and a list option also takes a single string. In a bot with `"type": "module"`, export it with `export default`, as `npx forgelint init` does.
+Paths in `forgelint.config.js` (or `.cjs`, `.mjs`) are relative to its folder. Every option is optional, and a list option also takes a single string. In a bot with `"type": "module"`, export it with `export default`, as `npx forgelint init` does.
 
 | Option | |
 |---|---|
