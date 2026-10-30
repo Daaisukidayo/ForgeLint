@@ -4,7 +4,8 @@ exports.fromArgCall = fromArgCall;
 exports.fromNative = fromNative;
 exports.fromCustom = fromCustom;
 const forgescript_1 = require("@tryforge/forgescript");
-/** @param type an `ArgType`, or its name like custom fn params take it */
+const metadata_1 = require("./metadata");
+/** @param type An `ArgType`, or its name, the way custom function parameters take it. */
 const typeName = (type, argTypes) => (typeof type === "number" ? argTypes[type] : typeof type === "string" ? type : undefined) ?? "String";
 const fromArg = (arg, argTypes) => ({
     name: arg.name,
@@ -16,39 +17,28 @@ const fromArg = (arg, argTypes) => ({
     enum: arg.enum ? Object.keys(arg.enum).filter((key) => arg.enum[key] !== undefined) : undefined,
 });
 /**
- * Runs an `Arg.requiredString(...)` read from a file w/ the bot's FS `Arg`, so default names & types match
- * @returns `null` if `Arg` has no such helper or it throws
+ * Runs an `Arg.requiredString(...)` read from a file with the bot's ForgeScript `Arg`, for default names and types to match.
+ * @returns `null` if `Arg` has no such helper or it throws.
  */
 function fromArgCall(call, Arg, argTypes) {
     const helper = Arg[call.method];
     if (typeof helper !== "function")
         return null;
     try {
-        // an enum it got is `undefined` here, so its values just aren't checked
+        // an enum it got is `undefined` here: its values just aren't checked
         return fromArg(helper.apply(Arg, call.values), argTypes);
     }
     catch {
         return null;
     }
 }
-/** @param argTypes the `ArgType` of the FS it's built w/. Default ForgeLint's */
+/** @param argTypes The `ArgType` of the ForgeScript it's built with. Defaults to ForgeLint's. */
 function fromNative(data, source, argTypes = forgescript_1.ArgType) {
-    const args = data.args ?? [];
-    return {
-        name: data.name,
-        aliases: (data.aliases ?? []).filter((alias) => typeof alias === "string"),
-        brackets: data.brackets,
-        args: args.map((arg) => fromArg(arg, argTypes)),
-        // FS turns it off w/o args
-        unwrap: !!data.unwrap && args.length > 0,
-        deprecated: !!data.deprecated,
-        description: data.description ?? "",
-        source,
-    };
+    return (0, metadata_1.fromMetadata)({ ...data, args: data.args?.map((arg) => fromArg(arg, argTypes)) }, source);
 }
 /**
- * A custom fn, built the way `ForgeFunction.asNative` builds it
- * @param argTypes the `ArgType` of the FS it's for. Default ForgeLint's
+ * A custom function, built the way `ForgeFunction.asNative` builds it.
+ * @param argTypes The `ArgType` of the ForgeScript it's for. Defaults to ForgeLint's.
  */
 function fromCustom(data, source, argTypes = forgescript_1.ArgType) {
     const params = Array.isArray(data.params) ? data.params : [];
@@ -71,6 +61,8 @@ function fromCustom(data, source, argTypes = forgescript_1.ArgType) {
         deprecated: false,
         description: "Custom function",
         source,
+        // it gets a copy of the caller's variables
+        opaque: true,
     };
 }
 //# sourceMappingURL=convert.js.map

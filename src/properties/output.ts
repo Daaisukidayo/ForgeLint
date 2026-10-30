@@ -1,7 +1,7 @@
-/** What `$lintCode` returns */
+/** What `$lintCode` returns. */
 export enum LintOutput {
-    /** `[{ rule, severity, message, line, column }]`. Default */
+    /** The default: `[{ rule, severity, message, line, column }]`. */
     json = "json",
-    /** a line per problem: `1:5 error Unknown function $x (unknown-function)` */
+    /** A line per problem: `1:5 error Unknown function $x (unknown-function)`. */
     text = "text",
 }

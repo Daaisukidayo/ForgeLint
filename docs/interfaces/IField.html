@@ -11,11 +11,11 @@
 <li><a href="" aria-current="page">IField</a></li></ul>
 <h1>Interface IField</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>A call's arg</p>
+<div class="tsd-comment tsd-typography"><p>A call's argument.</p>
 </div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">IField</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#calls">calls</a><span class="tsd-signature-symbol">:</span> <a href="ICall.html" class="tsd-signature-type tsd-kind-interface">ICall</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#end">end</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#literal">literal</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#start">start</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Parser.ts#L6">src/structures/Parser.ts:6</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/ae5cd60205e220e8d1d312328a75bea2a057f965/src/structures/Parser.ts#L6">src/structures/Parser.ts:6</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -34,29 +34,29 @@
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="calls"><span>calls</span><a href="#calls" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">calls</span><span class="tsd-signature-symbol">:</span> <a href="ICall.html" class="tsd-signature-type tsd-kind-interface">ICall</a><span class="tsd-signature-symbol">[]</span></div>
-<div class="tsd-comment tsd-typography"><p>fns right inside it</p>
+<div class="tsd-comment tsd-typography"><p>The functions right inside it.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Parser.ts#L11">src/structures/Parser.ts:11</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/ae5cd60205e220e8d1d312328a75bea2a057f965/src/structures/Parser.ts#L11">src/structures/Parser.ts:11</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="end"><span>end</span><a href="#end" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">end</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
-<div class="tsd-comment tsd-typography"><p>offset of the <code>;</code>/<code>]</code> after it, or the code's length if unclosed</p>
+<div class="tsd-comment tsd-typography"><p>The offset of the <code>;</code> or <code>]</code> after it, or the code's length if unclosed.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Parser.ts#L9">src/structures/Parser.ts:9</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/ae5cd60205e220e8d1d312328a75bea2a057f965/src/structures/Parser.ts#L9">src/structures/Parser.ts:9</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="literal"><span>literal</span><a href="#literal" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">literal</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
-<div class="tsd-comment tsd-typography"><p>its text w/ escapes resolved, <code>null</code> if a fn's inside</p>
+<div class="tsd-comment tsd-typography"><p>Its text with escapes resolved, <code>null</code> if a function is inside.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Parser.ts#L13">src/structures/Parser.ts:13</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/ae5cd60205e220e8d1d312328a75bea2a057f965/src/structures/Parser.ts#L13">src/structures/Parser.ts:13</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="start"><span>start</span><a href="#start" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">start</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Parser.ts#L7">src/structures/Parser.ts:7</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/ae5cd60205e220e8d1d312328a75bea2a057f965/src/structures/Parser.ts#L7">src/structures/Parser.ts:7</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

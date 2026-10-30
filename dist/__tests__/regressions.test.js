@@ -11,7 +11,7 @@ const __1 = require("..");
 const embedded_1 = require("../functions/embedded");
 const script_1 = require("../functions/script");
 const harness_1 = require("./support/harness");
-/** `\`, spelled out so editors & tools don't mangle the escapes below */
+/** `\`, spelled out: editors and tools won't mangle the escapes below. */
 const BS = String.fromCharCode(92);
 (0, node_test_1.describe)("fixed bugs", () => {
     (0, node_test_1.it)("a broken \\u{ escape doesn't hang or throw", () => {

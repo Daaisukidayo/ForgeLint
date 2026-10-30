@@ -1,12 +1,18 @@
 #!/usr/bin/env node
 import { existsSync, writeFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
+import { pathToFileURL } from "node:url"
+import { isModule } from "./functions/packages"
+import { brief } from "./functions/text"
 import { IFileReport, Project, Reporter } from "./structures"
 import { IForgeLintConfig, Severity } from "./types"
 
 const CONFIG = "forgelint.config.js"
 
-const HELP = `Usage: forgelint [paths...] [--fix] [--check] [--json] [--config <file>]
+/** Looked for in this order. */
+const CONFIGS = [CONFIG, "forgelint.config.cjs", "forgelint.config.mjs"]
+
+const HELP = `Usage: forgelint [paths...] [--fix] [--fix-brackets] [--check] [--json] [--config <file>]
        forgelint init
 
 Checks the ForgeScript in your bot w/o running it: unknown functions,
@@ -14,34 +20,42 @@ wrong argument counts, unbalanced brackets & more.
 Paths default to the config's include, else the config's folder.
 
   --fix            Formats the code in place, then checks it
+  --fix-brackets   Like --fix, & escapes each ] that closes a function too early or closes nothing
   --check          Also fails if a file isn't formatted
   --json           Prints the problems as JSON
-  --config <file>  Config file, default ${CONFIG}
+  --config <file>  Config file, default ${CONFIG}, .cjs or .mjs
   init             Creates ${CONFIG}
   --help           Shows this`
 
 const EXAMPLE_CONFIG = `/** @type {import("forge.lint").IForgeLintConfig} */
-module.exports = {
+const config = {
     // files & folders w/ your commands, events & custom functions
     include: ["."],
 
     // custom function folders, like ForgeClient's \`functions\`. Compiled .js
     // functions: "./functions",
 
-    // functions your bot makes at runtime, never reported unknown
-    // known: ["$myRuntimeFunction"],
+    // functions ForgeLint can't find in your files, e.g. names built in code. Never reported unknown
+    // known: ["$swordPrice"],
 
     // "error", "warning", "info" or "off"
     // rules: { "function-case": "off" },
 }
+
+module.exports = config
 `
 
-/** `forgelint init` */
+/** Runs `forgelint init`. */
 function init() {
-    if (existsSync(CONFIG)) {
-        console.log(`  kept    ${CONFIG}, it already exists`)
+    const existing = CONFIGS.find((name) => existsSync(name))
+    if (existing) {
+        console.log(`  kept    ${existing}, it already exists`)
     } else {
-        writeFileSync(CONFIG, EXAMPLE_CONFIG, "utf8")
+        // ESM has no `module.exports`
+        const text = isModule(process.cwd())
+            ? EXAMPLE_CONFIG.replace("module.exports =", "export default")
+            : EXAMPLE_CONFIG
+        writeFileSync(CONFIG, text, "utf8")
         console.log(`  created ${CONFIG}`)
     }
 
@@ -49,7 +63,7 @@ function init() {
     return 0
 }
 
-/** @returns files w/ problems or unformatted, as JSON */
+/** @returns Files with problems or unformatted ones, as JSON. */
 const toJSON = (reports: IFileReport[]) =>
     JSON.stringify(
         reports
@@ -57,21 +71,15 @@ const toJSON = (reports: IFileReport[]) =>
             .map(({ file, problems, formatted }) => ({
                 file,
                 formatted: formatted === undefined,
-                problems: problems.map(({ rule, severity, message, line, column }) => ({
-                    rule,
-                    severity,
-                    message,
-                    line,
-                    column,
-                })),
+                problems: problems.map(brief),
             })),
         null,
         2
     )
 
 /**
- * @returns exit code: 1 on an error, or an unformatted file w/ `--check`
- * @throws on a bad option or a missing config/path
+ * @returns The exit code: 1 on an error, or on an unformatted file with `--check`.
+ * @throws On a bad option or a missing config or path.
  */
 async function main(args: string[]) {
     if (args.includes("--help") || args.includes("-h")) {
@@ -91,13 +99,13 @@ async function main(args: string[]) {
         if (arg === "--config" || arg.startsWith("--config=")) {
             option = arg === "--config" ? args[++i] : arg.slice("--config=".length)
             if (!option) throw new Error("--config needs a file. See forgelint --help.")
-        } else if (["--fix", "--check", "--json"].includes(arg)) flags.add(arg)
+        } else if (["--fix", "--fix-brackets", "--check", "--json"].includes(arg)) flags.add(arg)
         else if (arg.startsWith("--")) throw new Error(`${arg} is not an option. See forgelint --help.`)
         // resolved before the cwd changes
         else paths.push(resolve(arg))
     }
 
-    const path = resolve(option ?? CONFIG)
+    const path = resolve(option ?? CONFIGS.find((name) => existsSync(name)) ?? CONFIG)
     if (option && !existsSync(path)) throw new Error(`There is no config file at ${path}.`)
 
     // like the bot started from its own dir, for relative paths in custom fns
@@ -106,7 +114,9 @@ async function main(args: string[]) {
 
     let config: IForgeLintConfig = {}
     if (existsSync(path)) {
-        const loaded = require(path)
+        // `import`, not `require`: ESM loads on every Node 22 too. A CJS cfg comes as `default`
+        const imported = await import(pathToFileURL(path).href)
+        const loaded = imported.default ?? imported
         config = loaded.default ?? loaded
     }
 
@@ -114,10 +124,11 @@ async function main(args: string[]) {
     const reporter = new Reporter()
     const project = new Project(config, root)
     const check = flags.has("--check")
-    let reports = project.check(paths)
+    const brackets = flags.has("--fix-brackets")
+    let reports = project.check(paths, brackets)
     let fixed = 0
 
-    if (flags.has("--fix")) {
+    if (brackets || flags.has("--fix")) {
         fixed = Project.write(reports)
         // positions moved
         if (fixed) reports = project.check(paths)
@@ -127,19 +138,8 @@ async function main(args: string[]) {
         reports.some((report) => report.problems.some((problem) => problem.severity === Severity.error)) ||
         (check && reports.some((report) => report.formatted !== undefined))
 
-    if (flags.has("--json")) {
-        console.log(toJSON(reports))
-        return failed ? 1 : 0
-    }
-
-    reporter.start(
-        reports.length,
-        reports.reduce((sum, report) => sum + report.codes, 0),
-        project.functions.functions.length
-    )
-    reporter.notes(project.notes)
-    for (const report of reports) reporter.file(report, check)
-    reporter.summary(reports, check, fixed)
+    if (flags.has("--json")) console.log(toJSON(reports))
+    else reporter.print(reports, project.functions.functions.length, project.notes, check, fixed)
 
     return failed ? 1 : 0
 }

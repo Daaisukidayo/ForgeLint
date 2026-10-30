@@ -44,14 +44,14 @@ describe("argument counts", () => {
         const [problem] = lint("$get[a;b]")
 
         assert.equal(problem.rule, Rule.tooManyArguments)
-        assert.equal(problem.message, "$get takes at most 1 argument, got 2: $get[key]")
+        assert.equal(problem.message, "$get takes at most 1 argument, got 2. Usage: $get[key]")
         assert.equal("$get[a;b]".slice(problem.start, problem.end), ";b")
     })
 
     it("too few", () => {
         assert.equal(
             lint("$addField[Coins]")[0].message,
-            "$addField needs at least 2 arguments, got 1: $addField[name;value;inline?;index?]"
+            "$addField needs at least 2 arguments, got 1. Usage: $addField[name;value;inline?;index?]"
         )
     })
 
@@ -132,9 +132,44 @@ describe("argument values", () => {
     })
 })
 
+describe("variables", () => {
+    it("set & never read warn, once, at the name", () => {
+        const code = "$let[coins;1] $let[coins;2]"
+        const [problem, ...rest] = lint(code)
+
+        assert.deepEqual(rest, [])
+        assert.equal(problem.rule, Rule.unusedVariable)
+        assert.equal(problem.severity, Severity.warning)
+        assert.equal(problem.message, "Variable coins is set but never read")
+        assert.equal(code.slice(problem.start, problem.end), "coins")
+    })
+
+    it("are read by $get, $has & $letSum & co., case-sensitively", () => {
+        assert.deepEqual(rulesIn("$let[a;1] $get[a] $let[b;1] $has[b] $let[c;1] $letSub[c;1]"), [])
+        assert.match(lint("$let[coins;1] $get[Coins]")[0].message, /: Coins is another one, names are case-sensitive$/)
+    })
+
+    it("skip code that could read them unseen, & names built in code", () => {
+        // any name, a custom function, code from a value, a name of its own
+        for (const code of [
+            "$let[a;1] $get[$get[b]]",
+            "$let[a;1] $greet[x]",
+            "$let[a;1] $eval[x]",
+            "$let[$get[b];1]",
+        ]) {
+            assert.deepEqual(rulesIn(code), [], code)
+        }
+    })
+
+    it("don't count what $c comments out", () => {
+        assert.deepEqual(rulesIn("$let[a;1] $c[$get[a]]"), [Rule.unusedVariable])
+        assert.deepEqual(rulesIn("$c[$let[a;1]]"), [])
+    })
+})
+
 describe("style", () => {
     it("deprecated functions warn", () => {
-        // older FS has no deprecated fns, so bring our own
+        // older FS has no deprecated fns: bring our own
         const old = { ...FunctionRegistry.loose("old", "test"), deprecated: true }
         assert.deepEqual(
             new Linter(new FunctionRegistry([old])).lint("$old").map((problem) => problem.rule),

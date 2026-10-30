@@ -4,15 +4,15 @@ exports.Parser = void 0;
 exports.flatten = flatten;
 const text_1 = require("../functions/text");
 const types_1 = require("../types");
-/** FS names are letters & digits */
+/** ForgeScript names are letters and digits. */
 const WORD = /[A-Za-z][A-Za-z0-9]*/y;
-/** @returns the calls & all calls nested in them, in code order */
+/** @returns The calls and all calls nested in them, in code order. */
 function flatten(calls) {
     return calls.flatMap((call) => [call, ...flatten(call.fields.flatMap((field) => field.calls))]);
 }
 /**
- * Reads ForgeScript like FS's compiler does, but doesn't bail on the 1st problem.
- * Code that compiles comes out as the same calls & fields
+ * Reads ForgeScript like the ForgeScript compiler does, but doesn't stop at the first problem.
+ * Code that compiles comes out as the same calls and fields.
  */
 class Parser {
     code;
@@ -20,21 +20,21 @@ class Parser {
     escaped;
     index = 0;
     findings = [];
-    /** `suggest` is the slow bit, so a name gets it once */
+    /** `suggest` is the slow part: a name gets it once. */
     guesses = new Map();
     constructor(code, registry, escaped) {
         this.code = code;
         this.registry = registry;
         this.escaped = escaped;
     }
-    /** @param escaped how an escaped `]` is written where the code lives, e.g. `\\]` in a JS string */
+    /** @param escaped How an escaped `]` is written where the code lives, for example `\\]` in a JavaScript string. */
     static parse(code, registry, escaped = "\\]") {
         const parser = new Parser(code, registry, escaped);
         return { calls: parser.top(), findings: parser.findings };
     }
     top() {
         const calls = [];
-        // text `[`s, so the `]` closing one isn't stray
+        // text `[`s: the `]` closing one isn't stray
         let open = 0;
         while (this.index < this.code.length) {
             const char = this.code[this.index];
@@ -57,14 +57,14 @@ class Parser {
                 if (open)
                     open--;
                 else {
-                    this.find(types_1.Rule.strayBracket, this.index, this.index + 1, `This ] closes nothing, so it's printed as text. If that's intended, escape it: ${this.escaped}`);
+                    this.find(types_1.Rule.strayBracket, this.index, this.index + 1, `This ] closes nothing and is printed as text. If that's intended, escape it: ${this.escaped}`);
                 }
             }
             this.index++;
         }
         return calls;
     }
-    /** At a `$`: reads the call, or reports an unknown name & steps over the `$` */
+    /** At a `$`: reads the call, or reports an unknown name and steps over the `$`. */
     call() {
         const start = this.index;
         let index = start + 1;
@@ -118,7 +118,7 @@ class Parser {
             return call;
         }
         if (fn.brackets === undefined) {
-            this.find(types_1.Rule.unexpectedBrackets, nameEnd, nameEnd + 1, `${spelling} takes no arguments, so this [ and what follows is printed as text`);
+            this.find(types_1.Rule.unexpectedBrackets, nameEnd, nameEnd + 1, `${spelling} takes no arguments: this [ and what follows is printed as text`);
             return call;
         }
         call.open = nameEnd;
@@ -140,7 +140,7 @@ class Parser {
         this.tooMany(call);
         return call;
     }
-    /** Reads a field up to its `;`/`]` & stops there */
+    /** Reads a field up to its `;` or `]` and stops there. */
     field(owner) {
         const start = this.index;
         const calls = [];
@@ -177,14 +177,14 @@ class Parser {
         }
         return { start, end: Math.min(this.index, this.code.length), calls, literal: calls.length ? null : text };
     }
-    /** FS won't compile fields past the last arg */
+    /** ForgeScript won't compile fields past the last argument. */
     tooMany(call) {
         const { fn } = call;
         if (fn.loose || fn.args.some((arg) => arg.rest) || call.fields.length <= fn.args.length)
             return;
-        this.find(types_1.Rule.tooManyArguments, call.separators[fn.args.length - 1] ?? call.open, call.close ?? call.end, `${call.spelling} takes at most ${(0, text_1.plural)(fn.args.length, "argument")}, got ${call.fields.length}: ${(0, text_1.signature)(fn)}`, true);
+        this.find(types_1.Rule.tooManyArguments, call.separators[fn.args.length - 1] ?? call.open, call.close ?? call.end, `${call.spelling} takes at most ${(0, text_1.plural)(fn.args.length, "argument")}, got ${call.fields.length}. Usage: ${(0, text_1.signature)(fn, call.spelling)}`, true);
     }
-    /** @param read the fn FS reads instead, glued to the rest. It needs brackets, so it won't compile */
+    /** @param read The function ForgeScript reads instead, glued to the rest. It needs brackets: it won't compile. */
     unknown(start, end, word, read) {
         const name = `$${word}`;
         if (!this.guesses.has(name))
@@ -197,7 +197,7 @@ class Parser {
         this.find(types_1.Rule.unknownFunction, start, end, message, !!read);
     }
     find(rule, start, end, message, fatal = false) {
-        this.findings.push(fatal ? { rule, message, start, end, fatal } : { rule, message, start, end });
+        this.findings.push({ rule, message, start, end, fatal });
     }
 }
 exports.Parser = Parser;

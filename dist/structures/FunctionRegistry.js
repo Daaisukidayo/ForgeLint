@@ -3,17 +3,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FunctionRegistry = void 0;
 const text_1 = require("../functions/text");
 const keyOf = (name) => (name.startsWith("$") ? name : `$${name}`).toLowerCase();
-/** The fns code can call. Matched like FS does it: any case, longest name wins */
+/** The functions code can call. Matched like ForgeScript does it: in any case, the longest name wins. */
 class FunctionRegistry {
-    /** lowercased name/alias → entry */
+    /** Maps a lowercased name or alias to its entry. */
     entries = new Map();
-    /** name lengths w/o `$`, longest 1st. `null` = recount */
+    /** Name lengths without the `$`, longest first. `null` means recount. */
     lengths = null;
     constructor(fns = []) {
         for (const fn of fns)
             this.add(fn);
     }
-    /** A fn known by name only, its args aren't checked. `brackets` as in `IFunctionInfo` */
+    /** A function known by name only, its arguments aren't checked. `brackets` works as in `IFunctionInfo`. */
     static loose(name, source, brackets = false) {
         return {
             name: name.startsWith("$") ? name : `$${name}`,
@@ -25,12 +25,14 @@ class FunctionRegistry {
             description: "",
             source,
             loose: true,
+            // what it runs is unknown too
+            opaque: true,
         };
     }
     /**
-     * 1st fn of a name stays, like in FS
-     * @param override replace it instead, like custom fns do
-     * @returns whether it got added
+     * The first function of a name stays, like in ForgeScript.
+     * @param override Replace it instead, like custom functions do.
+     * @returns Whether it got added.
      */
     add(fn, override = false) {
         const key = keyOf(fn.name);
@@ -53,13 +55,13 @@ class FunctionRegistry {
             if (entry.fn === fn)
                 this.entries.delete(key);
     }
-    /** @param name w/ or w/o `$`, any case, aliases work */
+    /** @param name With or without the `$`, in any case. Aliases work. */
     get(name) {
         return this.entries.get(keyOf(name))?.fn;
     }
     /**
-     * @param index right after the `$` & its `!`, `#`, `@[...]`
-     * @returns the longest fn whose name starts there
+     * @param index Right after the `$` and its `!`, `#` or `@[...]`.
+     * @returns The longest function whose name starts there.
      */
     match(code, index) {
         this.lengths ??= [...new Set([...this.entries.keys()].map((key) => key.length - 1))].sort((a, b) => b - a);
@@ -72,27 +74,14 @@ class FunctionRegistry {
         }
         return null;
     }
-    /** every fn once */
+    /** Every function once. */
     get functions() {
         return [...new Set([...this.entries.values()].map((entry) => entry.fn))];
     }
-    /** @returns closest name/alias, if it's close enough to be a typo */
+    /** @returns The closest name or alias, if it's close enough to be a typo. */
     suggest(name) {
-        const wanted = name.toLowerCase();
-        // `$a` is 1 edit away from tons of names, none of them meant
-        const max = wanted.length > 5 ? 2 : wanted.length > 3 ? 1 : 0;
-        if (!max)
-            return;
-        let best;
-        let bestDistance = max + 1;
-        for (const [key, { spelling }] of this.entries) {
-            const edits = (0, text_1.distance)(wanted, key, max);
-            if (edits < bestDistance) {
-                best = spelling;
-                bestDistance = edits;
-            }
-        }
-        return best;
+        const key = (0, text_1.closest)(name, this.entries.keys());
+        return key && this.entries.get(key).spelling;
     }
 }
 exports.FunctionRegistry = FunctionRegistry;

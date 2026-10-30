@@ -37,11 +37,11 @@ const harness_1 = require("./support/harness");
     (0, node_test_1.it)("too many: ForgeScript won't compile it", () => {
         const [problem] = (0, harness_1.lint)("$get[a;b]");
         strict_1.default.equal(problem.rule, __1.Rule.tooManyArguments);
-        strict_1.default.equal(problem.message, "$get takes at most 1 argument, got 2: $get[key]");
+        strict_1.default.equal(problem.message, "$get takes at most 1 argument, got 2. Usage: $get[key]");
         strict_1.default.equal("$get[a;b]".slice(problem.start, problem.end), ";b");
     });
     (0, node_test_1.it)("too few", () => {
-        strict_1.default.equal((0, harness_1.lint)("$addField[Coins]")[0].message, "$addField needs at least 2 arguments, got 1: $addField[name;value;inline?;index?]");
+        strict_1.default.equal((0, harness_1.lint)("$addField[Coins]")[0].message, "$addField needs at least 2 arguments, got 1. Usage: $addField[name;value;inline?;index?]");
     });
     (0, node_test_1.it)("count custom functions' params", () => {
         strict_1.default.deepEqual((0, harness_1.rulesIn)("$greet[a;b]"), [__1.Rule.tooManyArguments]);
@@ -99,9 +99,39 @@ const harness_1 = require("./support/harness");
         strict_1.default.deepEqual((0, harness_1.rulesIn)("$round[$get[x]] $addField[a;b;] $if[maybe==1;x]"), []);
     });
 });
+(0, node_test_1.describe)("variables", () => {
+    (0, node_test_1.it)("set & never read warn, once, at the name", () => {
+        const code = "$let[coins;1] $let[coins;2]";
+        const [problem, ...rest] = (0, harness_1.lint)(code);
+        strict_1.default.deepEqual(rest, []);
+        strict_1.default.equal(problem.rule, __1.Rule.unusedVariable);
+        strict_1.default.equal(problem.severity, __1.Severity.warning);
+        strict_1.default.equal(problem.message, "Variable coins is set but never read");
+        strict_1.default.equal(code.slice(problem.start, problem.end), "coins");
+    });
+    (0, node_test_1.it)("are read by $get, $has & $letSum & co., case-sensitively", () => {
+        strict_1.default.deepEqual((0, harness_1.rulesIn)("$let[a;1] $get[a] $let[b;1] $has[b] $let[c;1] $letSub[c;1]"), []);
+        strict_1.default.match((0, harness_1.lint)("$let[coins;1] $get[Coins]")[0].message, /: Coins is another one, names are case-sensitive$/);
+    });
+    (0, node_test_1.it)("skip code that could read them unseen, & names built in code", () => {
+        // any name, a custom function, code from a value, a name of its own
+        for (const code of [
+            "$let[a;1] $get[$get[b]]",
+            "$let[a;1] $greet[x]",
+            "$let[a;1] $eval[x]",
+            "$let[$get[b];1]",
+        ]) {
+            strict_1.default.deepEqual((0, harness_1.rulesIn)(code), [], code);
+        }
+    });
+    (0, node_test_1.it)("don't count what $c comments out", () => {
+        strict_1.default.deepEqual((0, harness_1.rulesIn)("$let[a;1] $c[$get[a]]"), [__1.Rule.unusedVariable]);
+        strict_1.default.deepEqual((0, harness_1.rulesIn)("$c[$let[a;1]]"), []);
+    });
+});
 (0, node_test_1.describe)("style", () => {
     (0, node_test_1.it)("deprecated functions warn", () => {
-        // older FS has no deprecated fns, so bring our own
+        // older FS has no deprecated fns: bring our own
         const old = { ...__1.FunctionRegistry.loose("old", "test"), deprecated: true };
         strict_1.default.deepEqual(new __1.Linter(new __1.FunctionRegistry([old])).lint("$old").map((problem) => problem.rule), [__1.Rule.deprecated]);
     });

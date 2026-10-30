@@ -1,31 +1,31 @@
-import { distance } from "../functions/text"
+import { closest } from "../functions/text"
 import { IFunctionInfo } from "../types"
 
 interface IEntry {
     fn: IFunctionInfo
-    /** that name as declared, e.g. `$authorID` */
+    /** That name as declared, for example `$authorID`. */
     spelling: string
 }
 
 export interface IFunctionMatch extends IEntry {
-    /** name length w/o `$` */
+    /** The name's length without the `$`. */
     length: number
 }
 
 const keyOf = (name: string) => (name.startsWith("$") ? name : `$${name}`).toLowerCase()
 
-/** The fns code can call. Matched like FS does it: any case, longest name wins */
+/** The functions code can call. Matched like ForgeScript does it: in any case, the longest name wins. */
 export class FunctionRegistry {
-    /** lowercased name/alias → entry */
+    /** Maps a lowercased name or alias to its entry. */
     private readonly entries = new Map<string, IEntry>()
-    /** name lengths w/o `$`, longest 1st. `null` = recount */
+    /** Name lengths without the `$`, longest first. `null` means recount. */
     private lengths: number[] | null = null
 
     public constructor(fns: Iterable<IFunctionInfo> = []) {
         for (const fn of fns) this.add(fn)
     }
 
-    /** A fn known by name only, its args aren't checked. `brackets` as in `IFunctionInfo` */
+    /** A function known by name only, its arguments aren't checked. `brackets` works as in `IFunctionInfo`. */
     public static loose(name: string, source: string, brackets: boolean | undefined = false): IFunctionInfo {
         return {
             name: name.startsWith("$") ? name : `$${name}`,
@@ -37,13 +37,15 @@ export class FunctionRegistry {
             description: "",
             source,
             loose: true,
+            // what it runs is unknown too
+            opaque: true,
         }
     }
 
     /**
-     * 1st fn of a name stays, like in FS
-     * @param override replace it instead, like custom fns do
-     * @returns whether it got added
+     * The first function of a name stays, like in ForgeScript.
+     * @param override Replace it instead, like custom functions do.
+     * @returns Whether it got added.
      */
     public add(fn: IFunctionInfo, override = false) {
         const key = keyOf(fn.name)
@@ -67,14 +69,14 @@ export class FunctionRegistry {
         for (const [key, entry] of this.entries) if (entry.fn === fn) this.entries.delete(key)
     }
 
-    /** @param name w/ or w/o `$`, any case, aliases work */
+    /** @param name With or without the `$`, in any case. Aliases work. */
     public get(name: string) {
         return this.entries.get(keyOf(name))?.fn
     }
 
     /**
-     * @param index right after the `$` & its `!`, `#`, `@[...]`
-     * @returns the longest fn whose name starts there
+     * @param index Right after the `$` and its `!`, `#` or `@[...]`.
+     * @returns The longest function whose name starts there.
      */
     public match(code: string, index: number): IFunctionMatch | null {
         this.lengths ??= [...new Set([...this.entries.keys()].map((key) => key.length - 1))].sort((a, b) => b - a)
@@ -89,29 +91,14 @@ export class FunctionRegistry {
         return null
     }
 
-    /** every fn once */
+    /** Every function once. */
     public get functions() {
         return [...new Set([...this.entries.values()].map((entry) => entry.fn))]
     }
 
-    /** @returns closest name/alias, if it's close enough to be a typo */
+    /** @returns The closest name or alias, if it's close enough to be a typo. */
     public suggest(name: string) {
-        const wanted = name.toLowerCase()
-        // `$a` is 1 edit away from tons of names, none of them meant
-        const max = wanted.length > 5 ? 2 : wanted.length > 3 ? 1 : 0
-        if (!max) return
-
-        let best: string | undefined
-        let bestDistance = max + 1
-
-        for (const [key, { spelling }] of this.entries) {
-            const edits = distance(wanted, key, max)
-            if (edits < bestDistance) {
-                best = spelling
-                bestDistance = edits
-            }
-        }
-
-        return best
+        const key = closest(name, this.entries.keys())
+        return key && this.entries.get(key)!.spelling
     }
 }

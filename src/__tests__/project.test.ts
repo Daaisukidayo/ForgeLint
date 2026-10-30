@@ -5,7 +5,7 @@ import { describe, it } from "node:test"
 import { Project, Rule } from ".."
 import { folder } from "./support/harness"
 
-/** a fake extension's native: `$fakeHello[who]` */
+/** A fake extension's native function: `$fakeHello[who]`. */
 const NATIVE = `const { NativeFunction } = require("@tryforge/forgescript")
 module.exports.default = new NativeFunction({
     name: "$fakeHello",
@@ -16,6 +16,10 @@ module.exports.default = new NativeFunction({
     args: [{ name: "who", description: "", rest: false, required: true, type: 1 }],
     execute() { return this.success() },
 })`
+
+/** A fake extension's event handler, like the ones of ForgeTimers. */
+const EVENT = `class FakeEventHandler { constructor(data) { this.data = data } get name() { return this.data.name } register() {} }
+module.exports.default = new FakeEventHandler({ name: "fakeEvent" })`
 
 describe("a project", () => {
     it("finds code files, skipping node_modules, dist, dot-folders, .d.ts, .fs & excluded ones", () => {
@@ -78,7 +82,7 @@ describe("a project", () => {
         assert.deepEqual(
             report.problems.map((p) => p.message.split(":")[0]),
             [
-                "$give needs at least 2 arguments, got 1",
+                "$give needs at least 2 arguments, got 1. Usage",
                 'Argument "number" of $double must be a number, not "two"',
                 "$double needs brackets",
                 "$any needs brackets",
@@ -105,9 +109,69 @@ describe("a project", () => {
 
         assert.deepEqual(
             report.problems.map((p) => p.message.split(":")[0]),
-            ["$fakeHello needs brackets", "$greet takes at most 1 argument, got 2"]
+            ["$fakeHello needs brackets", "$greet takes at most 1 argument, got 2. Usage"]
         )
         assert.deepEqual(project.notes, [])
+    })
+
+    it("warns about an unread variable, unless an extension running code w/ the caller's ctx may read it", () => {
+        const rules = (helper: string) => {
+            const root = folder({
+                "package.json": JSON.stringify({ dependencies: { "forge.fake": "1.0.0" } }),
+                "node_modules/forge.fake/package.json": JSON.stringify({
+                    name: "forge.fake",
+                    peerDependencies: { "@tryforge/forgescript": "*" },
+                }),
+                "node_modules/forge.fake/dist/native/hello.js": NATIVE,
+                // like ForgeClass, whose natives run methods through a helper
+                "node_modules/forge.fake/dist/run.js": helper,
+                "a.js": "module.exports = { code: `$let[a;1] $fakeHello[x]` }",
+            })
+            return new Project({ include: "a.js" }, root).check()[0].problems.map((problem) => problem.rule)
+        }
+
+        assert.deepEqual(rules("module.exports = (ctx) => ctx"), [Rule.unusedVariable])
+        assert.deepEqual(rules("module.exports = (ctx) => ctx.clone()"), [])
+    })
+
+    it("checks commands' events, ForgeScript's & its extensions', but not slash commands' type", () => {
+        const root = folder({
+            "package.json": JSON.stringify({ dependencies: { "forge.fake": "1.0.0" } }),
+            "node_modules/forge.fake/package.json": JSON.stringify({
+                name: "forge.fake",
+                peerDependencies: { "@tryforge/forgescript": "*" },
+            }),
+            "node_modules/forge.fake/dist/events/fakeEvent.js": EVENT,
+            "commands/a.js": [
+                "module.exports = [",
+                '    { type: "messageCreat", code: "hi" },',
+                '    { type: "fakeEvent", code: "hi" },',
+                '    { type: "messageCreate", code: "hi" },',
+                '    { data: {}, type: "guild", code: "hi" },',
+                "]",
+            ].join("\n"),
+        })
+
+        const [report] = new Project({ include: "commands" }, root).check()
+        assert.deepEqual(
+            report.problems.map((problem) => [problem.rule, problem.line, problem.column, problem.message]),
+            [[Rule.unknownEvent, 2, 14, "Unknown event messageCreat. Did you mean messageCreate?"]]
+        )
+    })
+
+    it("w/ brackets, escapes 1 ] at a time, as the file writes it", () => {
+        const root = folder({
+            "a.js": "module.exports = [{ code: `$title[[a](b) [c](d)]` }, { code: String.raw`$title[[x](y)] ]` }]",
+        })
+        const [report] = new Project({}, root).check(undefined, true)
+
+        // the ] after a closed $title, then the one after c did. The ones they left stray close it now
+        assert.equal(
+            report.formatted,
+            "module.exports = [{ code: `$title[[a\\\\](b) [c\\\\](d)]` }, { code: String.raw`$title[[x\\](y)] \\]` }]"
+        )
+        assert.deepEqual(report.problems, [])
+        assert.equal(new Project({}, root).check()[0].formatted, undefined)
     })
 
     it("notes what it couldn't load & goes on", () => {

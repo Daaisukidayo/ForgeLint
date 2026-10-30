@@ -1,5 +1,6 @@
 import { Arg, ArgType, NativeFunction } from "@tryforge/forgescript"
 import { loadedFunctions, rulesOf } from "../../functions/loaded"
+import { brief } from "../../functions/text"
 import { LintOutput } from "../../properties/output"
 import { Linter } from "../../structures/Linter"
 
@@ -23,8 +24,6 @@ export default new NativeFunction({
             )
         }
 
-        return this.successJSON(
-            problems.map(({ rule, severity, message, line, column }) => ({ rule, severity, message, line, column }))
-        )
+        return this.successJSON(problems.map(brief))
     },
 })

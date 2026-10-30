@@ -1,30 +1,40 @@
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs"
 import { extname, join, relative, resolve, sep } from "node:path"
+import { checkScript, checkText } from "../functions/check"
 import { ArgTypes, fromArgCall, fromCustom } from "../functions/convert"
-import { IEmbedded, cook, editsInFile, problemsInFile } from "../functions/embedded"
-import { FORGESCRIPT, extensionsOf, findPackage, loadCustomFunctions, loadNatives } from "../functions/packages"
+import { IEmbedded, cook } from "../functions/embedded"
+import {
+    CALLER,
+    FORGESCRIPT,
+    extensionsOf,
+    findPackage,
+    loadCustomFunctions,
+    loadEvents,
+    loadNatives,
+    touchesCaller,
+} from "../functions/packages"
 import { IDefinition, scanScript } from "../functions/script"
-import { lineStarts, plural } from "../functions/text"
+import { plural } from "../functions/text"
 import { IForgeLintConfig, IFunctionArg, IFunctionInfo, IProblem } from "../types"
-import { Formatter, IEdit, applyEdits } from "./Formatter"
+import { Formatter, applyEdits } from "./Formatter"
 import { FunctionRegistry } from "./FunctionRegistry"
 import { Linter, validateRules } from "./Linter"
 
 const EXTENSIONS = new Set([".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"])
 
-/** skipped at the top of a walk, unless included by path */
+/** Skipped at the top of a walk, unless included by path. */
 const BUILD_DIRS = new Set(["dist", "build", "docs", "coverage"])
 
 export interface IFileReport {
-    /** absolute */
+    /** Absolute. */
     path: string
-    /** relative to the root, `/`-separated */
+    /** Relative to the root, `/`-separated. */
     file: string
-    /** w/ the file's offsets, lines & columns */
+    /** With the file's offsets, lines and columns. */
     problems: IProblem[]
-    /** codes in it */
+    /** The codes in it. */
     codes: number
-    /** the file w/ its codes formatted, if that changes smth */
+    /** The file with its codes formatted, if that changes something. */
     formatted?: string
 }
 
@@ -35,21 +45,21 @@ interface IScanned {
     definitions: IDefinition[]
 }
 
-/** cfgs can give 1 string or an array */
+/** Configs can give one string or an array. */
 const listOf = (value: string | string[] | undefined) => (value === undefined ? [] : [value].flat())
 
 const readable = (path: string) => EXTENSIONS.has(extname(path)) && !/\.d\.[cm]?ts$/.test(path)
 
-/** @returns relative to the root, `/`-separated */
+/** @returns The path relative to the root, `/`-separated. */
 const shown = (path: string, root: string) => relative(root, path).split(sep).join("/")
 
-/** The bot's FS bits ForgeLint uses */
+/** The parts of the bot's ForgeScript that ForgeLint uses. */
 interface IForge {
     Arg: Record<string, unknown>
     ArgType: ArgTypes
 }
 
-/** If a fn's args aren't plain, they aren't checked */
+/** If a function's arguments aren't plain, they aren't checked. */
 function infoOf(definition: IDefinition, source: string, forge: IForge): IFunctionInfo {
     const { name, kind, brackets, params, firstParamCondition } = definition
 
@@ -81,36 +91,20 @@ function infoOf(definition: IDefinition, source: string, forge: IForge): IFuncti
     )
 }
 
-/** Lints & formats a file's codes */
-export function checkText(text: string, codes: IEmbedded[], linter: Linter, formatter: Formatter, alignToKey = true) {
-    const starts = lineStarts(text)
-    const problems: IProblem[] = []
-    const edits: IEdit[] = []
-
-    for (const embedded of codes) {
-        problems.push(...problemsInFile(linter.lint(embedded.code, embedded.escapedBracket), embedded, starts))
-        edits.push(...editsInFile(text, embedded, formatter.edits(embedded.code, { ...embedded, alignToKey })))
-    }
-
-    const formatted = applyEdits(text, edits)
-    return {
-        problems: problems.sort((a, b) => a.start - b.start || a.end - b.end),
-        formatted: formatted === text ? undefined : formatted,
-    }
-}
-
-/** A bot's files, checked together */
+/** A bot's files, checked together. */
 export class Project {
-    /** what failed to load. Shown, not fatal */
+    /** What failed to load. Shown, not fatal. */
     public readonly notes: string[] = []
     private readonly keys: Set<string>
     private loaded: FunctionRegistry | null = null
-    /** set w/ `loaded` */
+    /** Set with `loaded`. */
     private forge: IForge | null = null
+    /** What a command's `type` can be, set with `loaded`. `undefined` means unchecked: the events of ForgeScript itself couldn't be read. */
+    private events?: Set<string>
 
     /**
-     * @param root what cfg paths are relative to. Default the cwd
-     * @throws on a bad cfg
+     * @param root What config paths are relative to. Defaults to the current folder.
+     * @throws On a bad config.
      */
     public constructor(
         public readonly config: IForgeLintConfig = {},
@@ -130,34 +124,27 @@ export class Project {
         this.keys = new Set(config.properties === undefined ? ["code"] : listOf(config.properties))
     }
 
-    /** @returns how many files it wrote */
+    /** @returns How many files it wrote. */
     public static write(reports: IFileReport[]) {
-        let written = 0
-
-        for (const report of reports) {
-            if (report.formatted === undefined) continue
-            writeFileSync(report.path, report.formatted, "utf8")
-            written++
-        }
-
-        return written
+        const changed = reports.filter((report) => report.formatted !== undefined)
+        for (const report of changed) writeFileSync(report.path, report.formatted!, "utf8")
+        return changed.length
     }
 
     /**
-     * Fns code can call, minus the ones the files define: exts', FS's, the cfg's. Loaded once
-     * @throws if ForgeScript isn't installed
+     * The functions code can call, minus the ones the files define: the extensions', ForgeScript's and the config's. Loaded once.
+     * @throws If ForgeScript isn't installed.
      */
     public get functions() {
         if (this.loaded) return this.loaded
 
         const forgescript = findPackage(FORGESCRIPT, this.root)
         if (!forgescript) {
-            throw new Error(
-                `Can't find ${FORGESCRIPT} from ${this.root}. ForgeLint reads its functions, so install it.`
-            )
+            throw new Error(`Can't find ${FORGESCRIPT} from ${this.root}. ForgeLint reads its functions: install it.`)
         }
 
         const registry = new FunctionRegistry()
+        const events = new Set<string>()
         const { Arg, ArgType } = require(forgescript) as IForge
         this.forge = { Arg, ArgType }
         const extensions =
@@ -166,16 +153,26 @@ export class Project {
         // like in `ForgeClient`: exts load 1st & keep their names
         for (const name of extensions) {
             const dir = findPackage(name, this.root)
-            if (dir) this.load(name, () => loadNatives(dir, name, registry, ArgType))
-            else this.notes.push(`Extension ${name} isn't installed, so its functions are unknown.`)
+            if (dir) {
+                this.load(name, () => [
+                    ...loadNatives(dir, name, registry, ArgType, touchesCaller(dir)),
+                    ...loadEvents(dir, events),
+                ])
+            } else this.notes.push(`Extension ${name} isn't installed: its functions & events are unknown.`)
         }
 
         this.load("ForgeScript", () =>
             loadNatives(join(forgescript, "dist", "native"), "ForgeScript", registry, ArgType)
         )
 
+        const native = new Set<string>()
+        this.load("ForgeScript's events", () => loadEvents(join(forgescript, "dist", "handlers"), native))
+        // w/o FS's own, every command would look wrong
+        this.events = native.size ? new Set([...native, ...events]) : undefined
+
         for (const dir of listOf(this.config.natives)) {
-            this.load(dir, () => loadNatives(resolve(this.root, dir), dir, registry, ArgType))
+            const full = resolve(this.root, dir)
+            this.load(dir, () => loadNatives(full, dir, registry, ArgType, touchesCaller(full)))
         }
 
         for (const dir of listOf(this.config.functions)) {
@@ -188,9 +185,9 @@ export class Project {
     }
 
     /**
-     * @param paths default the cfg's `include`, else the root
-     * @returns every file to check, absolute & sorted
-     * @throws if a path doesn't exist
+     * @param paths Defaults to the config's `include`, otherwise the root.
+     * @returns Every file to check, absolute and sorted.
+     * @throws If a path doesn't exist.
      */
     public files(paths?: string[]) {
         const targets = paths?.length
@@ -209,28 +206,45 @@ export class Project {
     }
 
     /**
-     * Lints & formats every file
-     * @param paths default the cfg's `include`, else the root
-     * @throws if a path doesn't exist or ForgeScript isn't installed
+     * Lints and formats every file.
+     * @param paths Defaults to the config's `include`, otherwise the root.
+     * @param brackets Also escape each `]` a problem has a `fix` for, in `formatted`. The problems are then the fixed text's.
+     * @throws If a path doesn't exist or ForgeScript isn't installed.
      */
-    public check(paths?: string[]): IFileReport[] {
+    public check(paths?: string[], brackets = false): IFileReport[] {
         const scanned = this.files(paths).map((path) => this.scan(path))
 
         // fns the files define count too
         const registry = new FunctionRegistry(this.functions.functions)
-        for (const { path, definitions } of scanned) {
-            for (const definition of definitions) registry.add(infoOf(definition, shown(path, this.root), this.forge!))
+        for (const { path, text, definitions } of scanned) {
+            // a native whose file runs code w/ the caller's ctx may read its variables. Custom ones always may
+            const opaque = CALLER.test(text)
+            for (const definition of definitions) {
+                registry.add({ opaque, ...infoOf(definition, shown(path, this.root), this.forge!) })
+            }
         }
 
-        const linter = new Linter(registry, this.config.rules)
+        const linter = new Linter(registry, this.config.rules, this.events)
         const formatter = new Formatter(registry, this.config.indent)
+        const options = { properties: [...this.keys], alignToKey: this.config.alignToKey ?? true }
 
-        return scanned.map(({ path, text, codes }) => ({
-            path,
-            file: shown(path, this.root),
-            codes: codes.length,
-            ...checkText(text, codes, linter, formatter, this.config.alignToKey ?? true),
-        }))
+        return scanned.map(({ path, text, codes }) => {
+            let current = text
+            let result = checkText(text, codes, linter, formatter, options.alignToKey)
+
+            // 1 at a time: escaping an unescaped `]` often fixes the stray one after it. Each round escapes another `]`
+            for (let left = brackets ? text.split("]").length - 1 : 0; left > 0; left--) {
+                const fix = result.problems.find((problem) => problem.fix)?.fix
+                if (!fix) break
+
+                current = applyEdits(current, [fix])
+                result = checkScript(current, linter, formatter, options)
+            }
+
+            const final = result.formatted ?? current
+            const formatted = final === text ? undefined : final
+            return { path, file: shown(path, this.root), problems: result.problems, codes: codes.length, formatted }
+        })
     }
 
     private scan(path: string): IScanned {
@@ -239,7 +253,7 @@ export class Project {
         return { path, text, codes: literals.map((literal) => cook(text, literal)), definitions }
     }
 
-    /** @param top `dist` & co. only get skipped here, `commands/docs` is fine */
+    /** @param top Only here do `dist` and the like get skipped: `commands/docs` is fine. */
     private walk(dir: string, found: Set<string>, top: boolean) {
         for (const entry of readdirSync(dir, { withFileTypes: true })) {
             const path = join(dir, entry.name)
@@ -251,7 +265,7 @@ export class Project {
         }
     }
 
-    /** @returns whether the cfg's `exclude` names it, by name or path */
+    /** @returns Whether the config's `exclude` names it, by name or path. */
     private excluded(path: string) {
         const file = shown(path, this.root)
         const name = file.split("/").at(-1)
@@ -262,7 +276,7 @@ export class Project {
         })
     }
 
-    /** @param loader returns why files failed */
+    /** @param loader Returns why files failed. */
     private load(what: string, loader: () => string[]) {
         let failures: string[]
         try {
@@ -274,7 +288,7 @@ export class Project {
 
         if (failures.length) {
             this.notes.push(
-                `${plural(failures.length, "file")} of ${what} failed to load, so their functions are unknown. First: ${failures[0]}`
+                `${plural(failures.length, "file")} of ${what} failed to load: what they add is unknown. First: ${failures[0]}`
             )
         }
     }

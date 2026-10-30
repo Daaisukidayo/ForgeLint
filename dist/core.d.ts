@@ -1,0 +1,10 @@
+export { checkScript } from "./functions/check";
+export type { IScriptOptions } from "./functions/check";
+export { fromMetadata } from "./functions/metadata";
+export type { IFunctionMetadata } from "./functions/metadata";
+export * from "./structures/Formatter";
+export * from "./structures/FunctionRegistry";
+export * from "./structures/Linter";
+export * from "./structures/Parser";
+export * from "./types";
+//# sourceMappingURL=core.d.ts.map

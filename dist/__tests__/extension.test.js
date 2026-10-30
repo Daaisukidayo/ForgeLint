@@ -11,10 +11,27 @@ const __1 = require("..");
 const harness_1 = require("./support/harness");
 // discord.js grabs it as the default token, & we never log in for real
 delete process.env.DISCORD_TOKEN;
+/**
+ * A client with the extension. Each new one makes ForgeScript load its native functions again and list them all as overridden,
+ * which is muted, like in the harness of ForgeClass. It listens to `messageCreate`, the commands' event, for ForgeScript not to warn.
+ */
+function clientOf(extension) {
+    const warn = forgescript_1.Logger.warn;
+    forgescript_1.Logger.warn = (...args) => {
+        if (!args.map(String).join(" ").includes("Attempted to override"))
+            warn.apply(forgescript_1.Logger, args);
+    };
+    try {
+        return new forgescript_1.ForgeClient({ intents: [], events: ["messageCreate"], extensions: [extension] });
+    }
+    finally {
+        forgescript_1.Logger.warn = warn;
+    }
+}
 const lint = new __1.ForgeLint({ check: false, rules: { "function-case": "off" } });
-const client = new forgescript_1.ForgeClient({ intents: [], extensions: [lint] });
+const client = clientOf(lint);
 (0, node_test_1.after)(() => client.destroy());
-/** Runs code like a cmd would, minus Discord */
+/** Runs code like a command would, minus Discord. */
 const run = (code) => forgescript_1.Interpreter.run({ client, data: forgescript_1.Compiler.compile(code), obj: {}, command: null, doNotSend: true });
 (0, node_test_1.describe)("ForgeLint as an extension", () => {
     (0, node_test_1.it)("checks the client's commands & custom functions, w/ its rules", () => {
@@ -49,7 +66,7 @@ const run = (code) => forgescript_1.Interpreter.run({ client, data: forgescript_
         strict_1.default.equal(await run("$formatCode[\\$AUTHORID]"), "$authorID");
     });
     (0, node_test_1.it)("checks the code right before the bot logs in", async () => {
-        const other = new forgescript_1.ForgeClient({ intents: [], extensions: [new __1.ForgeLint()] });
+        const other = clientOf(new __1.ForgeLint());
         other.commands.add({ name: "y", type: "messageCreate", code: "$fooBar" });
         Object.assign(other, { token: null });
         const lines = [];
@@ -64,6 +81,57 @@ const run = (code) => forgescript_1.Interpreter.run({ client, data: forgescript_
             await other.destroy();
         }
         strict_1.default.ok(lines.some((line) => /Unknown function \$fooBar/.test(line)));
+    });
+    (0, node_test_1.it)("won't log in w/ stopOnError when the code has errors, warnings don't count", async () => {
+        const make = (code) => {
+            const other = clientOf(new __1.ForgeLint({ stopOnError: true }));
+            other.commands.add({ name: "z", type: "messageCreate", code });
+            Object.assign(other, { token: null });
+            return other;
+        };
+        const broken = make("$fooBar");
+        // a glued name is only a warning: this one gets to the real login, which fails w/o a token
+        const warned = make("$pingms");
+        const log = console.log;
+        console.log = () => { };
+        try {
+            await strict_1.default.rejects(broken.login(), /ForgeLint found 1 error\. The bot won't log in/);
+            await strict_1.default.rejects(warned.login(), (error) => !/ForgeLint/.test(error.message));
+        }
+        finally {
+            console.log = log;
+            await broken.destroy();
+            await warned.destroy();
+        }
+    });
+    (0, node_test_1.it)("warns that stopOnError does nothing w/ check off", () => {
+        const warn = console.warn;
+        const warnings = [];
+        console.warn = (line) => warnings.push(line);
+        try {
+            new __1.ForgeLint({ check: false, stopOnError: true });
+            new __1.ForgeLint({ stopOnError: true });
+        }
+        finally {
+            console.warn = warn;
+        }
+        strict_1.default.deepEqual(warnings, [
+            "ForgeLint: stopOnError does nothing while check is false, the bot logs in anyway.",
+        ]);
+    });
+    (0, node_test_1.it)("checks commands' events against what their manager listens to", async () => {
+        const other = clientOf(new __1.ForgeLint({ check: false }));
+        // FS warns it isn't listening to it
+        const log = console.log;
+        console.log = () => { };
+        try {
+            other.commands.add({ name: "w", type: "guildMemberAd", code: "hi" });
+        }
+        finally {
+            console.log = log;
+        }
+        strict_1.default.deepEqual(lint.check(other).map((report) => [report.file, report.problems.map((problem) => problem.message)]), [["guildMemberAd command w", ["Unknown event guildMemberAd. Did you mean guildMemberAdd?"]]]);
+        await other.destroy();
     });
 });
 //# sourceMappingURL=extension.test.js.map

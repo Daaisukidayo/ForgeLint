@@ -1,17 +1,17 @@
 import assert from "node:assert/strict"
 import { spawnSync } from "node:child_process"
-import { cpSync, existsSync, readFileSync } from "node:fs"
+import { cpSync, existsSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, it } from "node:test"
 import { EXAMPLE, folder } from "./support/harness"
 
 const CLI = join(__dirname, "..", "cli.js")
 
-/** Runs the CLI w/o colors, in the example bot by default */
+/** Runs the CLI without colors, in the example bot by default. */
 const forgelint = (args: string[], cwd = EXAMPLE) =>
     spawnSync(process.execPath, [CLI, ...args], { cwd, encoding: "utf8", env: { ...process.env, NO_COLOR: "1" } })
 
-/** example/commands/messy.js, formatted */
+/** `example/commands/messy.js`, formatted. */
 const TIDY = `// works, but npx forgelint --fix tidies it
 module.exports = {
     name: "dice",
@@ -37,7 +37,9 @@ describe("forgelint", () => {
             run.stdout,
             /commands\/typos\.js\n\s+6:16\s+error\s+Unknown function \$sendMesage\. Did you mean \$sendMessage\?\s+unknown-function/
         )
-        assert.match(run.stdout, /10 errors, 1 warning, 2 info/)
+        assert.match(run.stdout, /11 errors, 2 warnings, 2 info/)
+        assert.match(run.stdout, /Unknown event guildMemberAd\. Did you mean guildMemberAdd\?/)
+        assert.match(run.stdout, /Variable bonus is set but never read/)
         assert.match(run.stdout, /Argument "number" of \$double must be a number, not "two"/)
         assert.doesNotMatch(run.stdout, /ping\.js/)
     })
@@ -78,12 +80,53 @@ describe("forgelint", () => {
         assert.equal(forgelint(["commands/messy.js", "--check"], root).status, 0)
     })
 
+    it("--fix-brackets escapes a ] that closes a function too early, --fix leaves it", () => {
+        const file = "module.exports = { code: `$description[[Docs](url)]` }"
+        const root = folder({ "a.js": file })
+
+        assert.equal(forgelint(["--fix"], root).status, 1)
+        assert.equal(readFileSync(join(root, "a.js"), "utf8"), file)
+
+        assert.equal(forgelint(["--fix-brackets"], root).status, 0)
+        assert.equal(
+            readFileSync(join(root, "a.js"), "utf8"),
+            "module.exports = { code: `$description[[Docs\\\\](url)]` }"
+        )
+    })
+
     it("init creates a config, & keeps it after", () => {
         const root = folder({})
 
         assert.equal(forgelint(["init"], root).status, 0)
         assert.ok(existsSync(join(root, "forgelint.config.js")))
         assert.match(forgelint(["init"], root).stdout, /kept/)
+    })
+
+    it("init writes export default in an ESM bot, & that config loads", () => {
+        const root = folder({
+            "package.json": `{ "type": "module" }`,
+            "commands/a.js": "export default { code: `$pingms` }",
+        })
+
+        assert.equal(forgelint(["init"], root).status, 0)
+        const config = readFileSync(join(root, "forgelint.config.js"), "utf8")
+        assert.match(config, /^export default config$/m)
+        assert.doesNotMatch(config, /module\.exports/)
+        assert.equal(forgelint([], root).status, 0)
+
+        // glued-name is a warning by default: failing means the rules got read
+        writeFileSync(join(root, "forgelint.config.js"), `export default { rules: { "glued-name": "error" } }`)
+        assert.equal(forgelint([], root).status, 1)
+    })
+
+    it("finds forgelint.config.cjs", () => {
+        const root = folder({
+            "forgelint.config.cjs": `module.exports = { rules: { "glued-name": "error" } }`,
+            "commands/a.js": "module.exports = { code: `$pingms` }",
+        })
+
+        assert.equal(forgelint([], root).status, 1)
+        assert.match(forgelint(["init"], root).stdout, /kept {4}forgelint\.config\.cjs/)
     })
 
     it("refuses unknown options & a missing config", () => {

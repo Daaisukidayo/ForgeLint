@@ -23,7 +23,7 @@ npm i
 | Script | |
 |---|---|
 | `npm test` | Builds the project and runs every test. |
-| `npm run example` | Runs the CLI on the example bot. The bot has one mistake for each rule, so the command exits with code 1. |
+| `npm run example` | Runs the CLI on the example bot. The bot has one mistake for each rule, which makes the command exit with code 1. |
 | `npm run lint` | Checks the code with ESLint and Prettier. |
 | `npm run tidy` | Fixes everything ESLint and Prettier can fix. |
 | `npm run build` | Builds `dist` without the tests. |
@@ -34,7 +34,8 @@ npm i
 | Folder | |
 |---|---|
 | `src/structures` | `Parser` (reads code the same way ForgeScript's compiler does), `Linter` (the rules), `Formatter`, `FunctionRegistry`, `Project` (files and config), `Reporter`. |
-| `src/functions` | Finding ForgeScript code in JavaScript and TypeScript files (`script`, `embedded`) and loading functions from packages. |
+| `src/functions` | Finding ForgeScript code in JavaScript and TypeScript files (`script`, `embedded`), checking a file's text (`check`), reading `functions.json` (`metadata`) and loading functions and events from packages. |
+| `src/core.ts` | `forge.lint/core`: everything that works without ForgeScript and without reading files. It must not import `Project`, `convert`, `packages` or anything from `node:`. `exports` in `package.json` lets in only `forge.lint` and `forge.lint/core`. |
 | `src/native` | `$lintCode`, `$formatCode`, `$isCodeValid`. |
 | `src/__tests__` | Tests and their helpers. |
 | `example` | A bot with one mistake for each rule. The CLI tests run on it. |

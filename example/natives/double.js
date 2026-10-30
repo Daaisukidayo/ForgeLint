@@ -1,4 +1,4 @@
-// your own native: $double[number]. Compiled .js, so ForgeLint checks its args
+// your own native: $double[number]. Compiled .js: ForgeLint checks its args
 const { Arg, ArgType, NativeFunction } = require("@tryforge/forgescript")
 
 exports.default = new NativeFunction({

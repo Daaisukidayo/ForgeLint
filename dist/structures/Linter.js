@@ -8,6 +8,7 @@ const types_1 = require("../types");
 const Parser_1 = require("./Parser");
 exports.DefaultSeverities = {
     [types_1.Rule.unknownFunction]: types_1.Severity.error,
+    [types_1.Rule.unknownEvent]: types_1.Severity.error,
     [types_1.Rule.gluedName]: types_1.Severity.warning,
     [types_1.Rule.tooFewArguments]: types_1.Severity.error,
     [types_1.Rule.tooManyArguments]: types_1.Severity.error,
@@ -17,15 +18,16 @@ exports.DefaultSeverities = {
     [types_1.Rule.unescapedBracket]: types_1.Severity.error,
     [types_1.Rule.strayBracket]: types_1.Severity.warning,
     [types_1.Rule.invalidArgument]: types_1.Severity.error,
+    [types_1.Rule.unusedVariable]: types_1.Severity.warning,
     [types_1.Rule.deprecated]: types_1.Severity.warning,
     [types_1.Rule.functionCase]: types_1.Severity.info,
 };
 const DIRECTIVE = /^forgelint-(disable-next-line|disable-line|disable|enable)(?:\s+([\s\S]*))?$/;
-/** max enum values listed in a msg */
+/** The most enum values listed in a message. */
 const SHOWN_VALUES = 8;
-/** types FS makes smth out of empty text. Any other required arg errors when empty */
+/** Types ForgeScript makes something out of empty text. Any other required argument errors when empty. */
 const EMPTY_OK = new Set(["String", "Unknown", "Number", "BigInt", "Time"]);
-/** @throws on an unknown rule or setting */
+/** @throws On an unknown rule or setting. */
 function validateRules(rules = {}) {
     const names = Object.values(types_1.Rule);
     const settings = [...Object.values(types_1.Severity), "off"];
@@ -37,23 +39,16 @@ function validateRules(rules = {}) {
         }
     }
 }
-/** @returns fields needed: up to the last required arg */
-function minimumArgs(fn) {
-    let needed = 0;
-    fn.args.forEach((arg, i) => {
-        if (arg.required)
-            needed = i + 1;
-    });
-    return needed;
-}
-/** @returns the arg a field fills. A rest arg eats all fields from its own on */
+/** @returns The fields needed, up to the last required argument. */
+const minimumArgs = (fn) => fn.args.map((arg) => arg.required).lastIndexOf(true) + 1;
+/** @returns The argument a field fills. A rest argument takes all fields from its own on. */
 function argAt(fn, index) {
     const rest = fn.args.findIndex((arg) => arg.rest);
     return fn.args[rest !== -1 && index >= rest ? rest : index];
 }
 /**
- * Only types FS checks the same way at runtime
- * @returns why plain text can't be the arg, to go after `Argument "x" of $fn`. Nothing if it can or isn't plain
+ * Only types ForgeScript checks the same way at runtime.
+ * @returns Why plain text can't be the argument, to go after `Argument "x" of $fn`. Nothing if it can or isn't plain.
  */
 function invalidLiteral(arg, field) {
     const value = field.literal;
@@ -78,6 +73,50 @@ function invalidLiteral(arg, field) {
     }
 }
 const isComment = (call) => call.spelling.toLowerCase() === "$c";
+/** Functions that read a variable. `$letSum` and the like add to what's there. */
+const READS = new Set(["$get", "$has", "$letSum", "$letSub", "$letMulti", "$letDivide"]);
+/** Functions that run code that isn't in the text, with the same variables. */
+const OPAQUE = new Set(["$eval", "$djsEval", "$callFunction", "$callLocalFunction"]);
+/** @returns The calls that run, nested ones too. The ones in a `$c` don't. */
+const running = (calls) => calls.flatMap((call) => (isComment(call) ? [] : [call, ...running(call.fields.flatMap((field) => field.calls))]));
+/**
+ * Skips code calling an `opaque` or `OPAQUE` function: it may read the variables without a `$get` in the text.
+ * @returns A finding per variable `$let` sets and nothing reads, at its first `$let`.
+ */
+function unusedVariables(calls) {
+    const live = running(calls);
+    if (live.some((call) => call.fn.opaque || OPAQUE.has(call.fn.name)))
+        return [];
+    const set = new Map();
+    const read = new Set();
+    for (const call of live) {
+        const reads = READS.has(call.fn.name);
+        if (!reads && call.fn.name !== "$let")
+            continue;
+        // `null` = built in code, `HOLE` = a `${...}`: could be any name
+        const name = call.fields[0]?.literal;
+        if (name == null || name.includes(embedded_1.HOLE)) {
+            if (reads)
+                return [];
+            continue;
+        }
+        if (reads)
+            read.add(name);
+        else if (name && !set.has(name))
+            set.set(name, call.fields[0]);
+    }
+    return [...set]
+        .filter(([name]) => !read.has(name))
+        .map(([name, field]) => {
+        const other = [...read].find((key) => key.toLowerCase() === name.toLowerCase());
+        return {
+            rule: types_1.Rule.unusedVariable,
+            start: field.start,
+            end: field.end,
+            message: `Variable ${name} is set but never read${other ? `: ${other} is another one, names are case-sensitive` : ""}`,
+        };
+    });
+}
 function directivesIn(calls, starts) {
     const directives = [];
     for (const call of calls) {
@@ -99,7 +138,7 @@ function directivesIn(calls, starts) {
     }
     return directives;
 }
-/** @param directives in code order */
+/** @param directives In code order. */
 function silenced(rule, start, line, directives) {
     let off = false;
     for (const directive of directives) {
@@ -118,25 +157,47 @@ function silenced(rule, start, line, directives) {
     }
     return off;
 }
-/** Finds problems in ForgeScript code */
+/** Finds problems in ForgeScript code. */
 class Linter {
     registry;
     rules;
-    /** @throws on an unknown rule or setting */
-    constructor(registry, rules = {}) {
+    events;
+    /**
+     * @param events What a command's `type` can be. Without them, it isn't checked.
+     * @throws On an unknown rule or setting.
+     */
+    constructor(registry, rules = {}, events) {
         this.registry = registry;
         this.rules = rules;
+        this.events = events;
         validateRules(rules);
     }
     /**
-     * @param escaped how an escaped `]` is written where the code lives. Default `\]`, as FS reads it
-     * @returns problems, in code order
+     * @param events What the command's manager listens to. Defaults to the ones it got. None means unchecked.
+     * @returns The problem with a command's `type`, without a position. `null` if it's an event or the rule is off.
+     */
+    lintEvent(type, events = this.events) {
+        const severity = this.severityOf(types_1.Rule.unknownEvent);
+        if (!severity || !events?.size || events.has(type))
+            return null;
+        const guess = (0, text_1.closest)(type, events);
+        const hint = guess ? `Did you mean ${guess}?` : "Is the extension that adds it installed?";
+        return {
+            rule: types_1.Rule.unknownEvent,
+            severity,
+            message: `Unknown event ${type}. ${hint}`,
+        };
+    }
+    /**
+     * @param escaped How an escaped `]` is written where the code lives. Defaults to `\]`, as ForgeScript reads it.
+     * @returns The problems, in code order.
      */
     lint(code, escaped) {
         const { calls, findings } = Parser_1.Parser.parse(code, this.registry, escaped);
         const all = (0, Parser_1.flatten)(calls);
         for (const call of all)
             findings.push(...this.check(code, call));
+        findings.push(...unusedVariables(calls));
         const starts = (0, text_1.lineStarts)(code);
         const directives = directivesIn(all, starts);
         const comments = all.filter((call) => isComment(call) && call.open !== null);
@@ -145,7 +206,7 @@ class Linter {
             const severity = this.severityOf(rule);
             if (!severity)
                 continue;
-            // `$c` never runs, so in it only stuff that breaks compiling counts, or a `]` leaking text out
+            // `$c` never runs: in it only stuff that breaks compiling counts, or a `]` leaking text out
             const commented = comments.some((call) => start > call.open && start < (call.close ?? call.end));
             if (commented && !fatal && rule !== types_1.Rule.unescapedBracket)
                 continue;
@@ -155,14 +216,14 @@ class Linter {
         }
         return problems.sort((a, b) => a.start - b.start || a.end - b.end);
     }
-    /** @returns `null` = off */
+    /** @returns `null` means off. */
     severityOf(rule) {
         const setting = this.rules[rule];
         if (setting === "off")
             return null;
         return setting ?? exports.DefaultSeverities[rule];
     }
-    /** @returns what's wrong w/ a call, syntax aside */
+    /** @returns What's wrong with a call, syntax aside. */
     check(code, call) {
         const { fn, spelling } = call;
         const found = [];
@@ -186,7 +247,7 @@ class Linter {
         // unclosed = already reported & its fields are a guess
         if (call.close === null || fn.loose)
             return found;
-        // a `${...}` could hold `;`s, so it may be more args
+        // a `${...}` could hold `;`s, making more args
         const holes = call.fields.some((field) => code.slice(field.start, field.end).includes(embedded_1.HOLE));
         const needed = minimumArgs(fn);
         if (call.fields.length < needed && !holes) {
@@ -194,7 +255,7 @@ class Linter {
                 rule: types_1.Rule.tooFewArguments,
                 start: call.start,
                 end: call.end,
-                message: `${spelling} needs at least ${(0, text_1.plural)(needed, "argument")}, got ${call.fields.length}: ${(0, text_1.signature)(fn)}`,
+                message: `${spelling} needs at least ${(0, text_1.plural)(needed, "argument")}, got ${call.fields.length}. Usage: ${(0, text_1.signature)(fn, spelling)}`,
             });
         }
         // w/o unwrap, the fn reads its fields itself

@@ -11,10 +11,10 @@
 <li><a href="" aria-current="page">Linter</a></li></ul>
 <h1>Class Linter</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>Finds problems in ForgeScript code</p>
+<div class="tsd-comment tsd-typography"><p>Finds problems in ForgeScript code.</p>
 </div></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Linter.ts#L146">src/structures/Linter.ts:146</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/ae5cd60205e220e8d1d312328a75bea2a057f965/src/structures/Linter.ts#L191">src/structures/Linter.ts:191</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -31,6 +31,7 @@
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="methods">Methods<a href="#methods" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-index-list"><a href="#lint" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>lint</span></a>
+<a href="#lintevent" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>lint<wbr/>Event</span></a>
 </div></section></div></details></section></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Constructors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="constructors-1">Constructors<a href="#constructors-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
@@ -39,20 +40,23 @@
 <h3 class="tsd-anchor-link" id="constructor"><span>constructor</span><a href="#constructor" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="constructorlinter"><span class="tsd-signature-keyword">new</span> <span class="tsd-kind-constructor-signature">Linter</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">registry</span><span class="tsd-signature-symbol">:</span> <a href="FunctionRegistry.html" class="tsd-signature-type tsd-kind-class">FunctionRegistry</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">rules</span><span class="tsd-signature-symbol">?:</span> <a href="../types/RuleSettings.html" class="tsd-signature-type tsd-kind-type-alias">RuleSettings</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="" class="tsd-signature-type tsd-kind-class">Linter</a><a href="#constructorlinter" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="constructorlinter"><span class="tsd-signature-keyword">new</span> <span class="tsd-kind-constructor-signature">Linter</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">registry</span><span class="tsd-signature-symbol">:</span> <a href="FunctionRegistry.html" class="tsd-signature-type tsd-kind-class">FunctionRegistry</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">rules</span><span class="tsd-signature-symbol">?:</span> <a href="../types/RuleSettings.html" class="tsd-signature-type tsd-kind-type-alias">RuleSettings</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">events</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">ReadonlySet</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="" class="tsd-signature-type tsd-kind-class">Linter</a><a href="#constructorlinter" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li><span><span class="tsd-kind-parameter">registry</span>: <a href="FunctionRegistry.html" class="tsd-signature-type tsd-kind-class">FunctionRegistry</a></span></li>
-<li><span><span class="tsd-kind-parameter">rules</span>: <a href="../types/RuleSettings.html" class="tsd-signature-type tsd-kind-type-alias">RuleSettings</a><span class="tsd-signature-symbol"> = {}</span></span></li></ul></div>
+<li><span><span class="tsd-kind-parameter">rules</span>: <a href="../types/RuleSettings.html" class="tsd-signature-type tsd-kind-type-alias">RuleSettings</a><span class="tsd-signature-symbol"> = {}</span></span></li>
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">events</span>: <span class="tsd-signature-type">ReadonlySet</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></span>
+<div class="tsd-comment tsd-typography"><p>What a command's <code>type</code> can be. Without them, it isn't checked.</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="" class="tsd-signature-type tsd-kind-class">Linter</a></h4>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-throws">
-<h4 class="tsd-anchor-link" id="throws">Throws<a href="#throws" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>on an unknown rule or setting</p>
+<h4 class="tsd-anchor-link" id="throws">Throws<a href="#throws" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>On an unknown rule or setting.</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Linter.ts#L148">src/structures/Linter.ts:148</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/ae5cd60205e220e8d1d312328a75bea2a057f965/src/structures/Linter.ts#L196">src/structures/Linter.ts:196</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="properties-1">Properties<a href="#properties-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -60,7 +64,7 @@
 <h3 class="tsd-anchor-link" id="registry"><code class="tsd-tag">Readonly</code><span>registry</span><a href="#registry" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">registry</span><span class="tsd-signature-symbol">:</span> <a href="FunctionRegistry.html" class="tsd-signature-type tsd-kind-class">FunctionRegistry</a></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Linter.ts#L149">src/structures/Linter.ts:149</a></li></ul></aside></section></section></details>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/ae5cd60205e220e8d1d312328a75bea2a057f965/src/structures/Linter.ts#L197">src/structures/Linter.ts:197</a></li></ul></aside></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -75,12 +79,29 @@
 <ul class="tsd-parameter-list">
 <li><span><span class="tsd-kind-parameter">code</span>: <span class="tsd-signature-type">string</span></span></li>
 <li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">escaped</span>: <span class="tsd-signature-type">string</span></span>
-<div class="tsd-comment tsd-typography"><p>how an escaped <code>]</code> is written where the code lives. Default <code>\]</code>, as FS reads it</p>
+<div class="tsd-comment tsd-typography"><p>How an escaped <code>]</code> is written where the code lives. Defaults to <code>\]</code>, as ForgeScript reads it.</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <a href="../interfaces/IProblem.html" class="tsd-signature-type tsd-kind-interface">IProblem</a><span class="tsd-signature-symbol">[]</span></h4><p>problems, in code order</p>
+<h4 class="tsd-returns-title">Returns <a href="../interfaces/IProblem.html" class="tsd-signature-type tsd-kind-interface">IProblem</a><span class="tsd-signature-symbol">[]</span></h4><p>The problems, in code order.</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Linter.ts#L159">src/structures/Linter.ts:159</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/ae5cd60205e220e8d1d312328a75bea2a057f965/src/structures/Linter.ts#L225">src/structures/Linter.ts:225</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="lintevent"><span>lint<wbr/>Event</span><a href="#lintevent" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="lintevent-1"><span class="tsd-kind-call-signature">lintEvent</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">type</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">events</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">ReadonlySet</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Pick</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/IProblem.html" class="tsd-signature-type tsd-kind-interface">IProblem</a><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">&quot;rule&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;severity&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;message&quot;</span><span class="tsd-signature-symbol">&gt;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><a href="#lintevent-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">type</span>: <span class="tsd-signature-type">string</span></span></li>
+<li><span><span class="tsd-kind-parameter">events</span>: <span class="tsd-signature-type">ReadonlySet</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> = ...</span></span>
+<div class="tsd-comment tsd-typography"><p>What the command's manager listens to. Defaults to the ones it got. None means unchecked.</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Pick</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/IProblem.html" class="tsd-signature-type tsd-kind-interface">IProblem</a><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">&quot;rule&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;severity&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;message&quot;</span><span class="tsd-signature-symbol">&gt;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></h4><p>The problem with a command's <code>type</code>, without a position. <code>null</code> if it's an event or the rule is off.</p>
+<aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/ae5cd60205e220e8d1d312328a75bea2a057f965/src/structures/Linter.ts#L208">src/structures/Linter.ts:208</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -101,7 +122,7 @@
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
 <div><a href="#registry"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>registry</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Methods</summary>
-<div><a href="#lint"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>lint</span></a></div></details></div></details></div>
+<div><a href="#lint"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>lint</span></a><a href="#lintevent"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>lint<wbr/>Event</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">forge.lint</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">
