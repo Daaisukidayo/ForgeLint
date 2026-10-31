@@ -6,28 +6,28 @@ const node_fs_1 = require("node:fs");
 const node_path_1 = require("node:path");
 const node_test_1 = require("node:test");
 const __1 = require("../..");
-/** the repo, tests use its FS */
+/** The repository. Tests use its ForgeScript. */
 exports.ROOT = (0, node_path_1.join)(__dirname, "..", "..", "..");
 exports.EXAMPLE = (0, node_path_1.join)(exports.ROOT, "example");
-/** FS's fns + a custom `$greet[name]` */
+/** ForgeScript's functions plus a custom `$greet[name]`. */
 exports.registry = new __1.FunctionRegistry(new __1.Project({}, exports.ROOT).functions.functions);
 exports.registry.add((0, __1.fromCustom)({ name: "greet", params: ["name"], code: "" }, "test"));
 const lint = (code, rules) => new __1.Linter(exports.registry, rules).lint(code);
 exports.lint = lint;
-/** @returns broken rules, in code order */
+/** @returns The broken rules, in code order. */
 const rulesIn = (code, rules) => (0, exports.lint)(code, rules).map((problem) => problem.rule);
 exports.rulesIn = rulesIn;
 const format = (code, indent) => new __1.Formatter(exports.registry, indent).format(code);
 exports.format = format;
-/** temp dirs, nuked after the file */
+/** Temporary folders, removed after the file. */
 const made = [];
 (0, node_test_1.after)(() => {
     for (const dir of made)
         (0, node_fs_1.rmSync)(dir, { recursive: true, force: true });
 });
 /**
- * @param files path → content
- * @returns a temp dir w/ them, inside the repo so its FS gets found
+ * @param files Maps a path to its content.
+ * @returns A temporary folder with them, inside the repository for its ForgeScript to be found.
  */
 function folder(files) {
     const parent = (0, node_path_1.join)(exports.ROOT, ".test-tmp");

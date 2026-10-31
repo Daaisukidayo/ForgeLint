@@ -1,6 +1,6 @@
 import { bold, cyan, green, grey, red, yellow } from "../functions/paint"
 import { plural } from "../functions/text"
-import { Severity } from "../types"
+import { Rule, Severity } from "../types"
 import { IFileReport } from "./Project"
 
 const COLORS: Record<Severity, (text: string) => string> = {
@@ -9,12 +9,25 @@ const COLORS: Record<Severity, (text: string) => string> = {
     [Severity.info]: cyan,
 }
 
-/** Prints problems by file, then a summary */
+/** Prints problems by file, then a summary. */
 export class Reporter {
     private readonly started = performance.now()
 
-    /** @param write default `console.log` */
+    /** @param write Defaults to `console.log`. */
     public constructor(private readonly write: (line: string) => void = (line) => console.log(line)) {}
+
+    /**
+     * The header, every file, then the summary.
+     * @param functions How many are known.
+     * @returns How many errors there are.
+     */
+    public print(reports: IFileReport[], functions: number, notes: string[] = [], formatting = false, fixed = 0) {
+        const codes = reports.reduce((sum, report) => sum + report.codes, 0)
+        this.start(reports.length, codes, functions)
+        this.notes(notes)
+        for (const report of reports) this.file(report, formatting)
+        return this.summary(reports, formatting, fixed)
+    }
 
     public start(files: number, codes: number, functions: number) {
         this.write(
@@ -22,14 +35,14 @@ export class Reporter {
         )
     }
 
-    /** @param notes stuff that failed to load */
+    /** @param notes What failed to load. */
     public notes(notes: string[]) {
         for (const note of notes) this.write(grey(`  ${note}`))
     }
 
     /**
-     * Prints nothing for a clean file
-     * @param formatting say if it isn't formatted too
+     * Prints nothing for a clean file.
+     * @param formatting Also say if it isn't formatted.
      */
     public file(report: IFileReport, formatting = false) {
         const unformatted = formatting && report.formatted !== undefined
@@ -48,9 +61,10 @@ export class Reporter {
     }
 
     /**
-     * Counts & time
-     * @param formatting count unformatted files too
-     * @param fixed files `--fix` formatted
+     * Counts and time.
+     * @param formatting Count unformatted files too.
+     * @param fixed Files `--fix` formatted.
+     * @returns How many errors there are.
      */
     public summary(reports: IFileReport[], formatting = false, fixed = 0) {
         const problems = reports.flatMap((report) => report.problems)
@@ -64,7 +78,7 @@ export class Reporter {
 
         if (!problems.length && !unformatted) {
             this.write(`${green("✓ No problems")} ${seconds}`)
-            return
+            return 0
         }
 
         const parts: string[] = []
@@ -74,6 +88,10 @@ export class Reporter {
         if (unformatted) parts.push(yellow(`${plural(unformatted, "file")} not formatted`))
 
         this.write(`${errors || unformatted ? red("✗") : yellow("!")} ${parts.join(", ")} ${seconds}`)
-        if (infos && !fixed) this.write(grey("forgelint --fix fixes the info ones"))
+        // of the rules, `--fix` only fixes the case of names
+        if (!fixed && problems.some((problem) => problem.rule === Rule.functionCase)) {
+            this.write(grey("forgelint --fix fixes the function-case ones"))
+        }
+        return errors
     }
 }

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const forgescript_1 = require("@tryforge/forgescript");
 const loaded_1 = require("../../functions/loaded");
+const text_1 = require("../../functions/text");
 const output_1 = require("../../properties/output");
 const Linter_1 = require("../../structures/Linter");
 exports.default = new forgescript_1.NativeFunction({
@@ -20,7 +21,7 @@ exports.default = new forgescript_1.NativeFunction({
         if (output === output_1.LintOutput.text) {
             return this.success(problems.map((p) => `${p.line}:${p.column} ${p.severity} ${p.message} (${p.rule})`).join("\n"));
         }
-        return this.successJSON(problems.map(({ rule, severity, message, line, column }) => ({ rule, severity, message, line, column })));
+        return this.successJSON(problems.map(text_1.brief));
     },
 });
 //# sourceMappingURL=lintCode.js.map

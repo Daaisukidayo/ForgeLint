@@ -7,7 +7,7 @@ import { HOLE, cook } from "../functions/embedded"
 import { scanScript } from "../functions/script"
 import { EXAMPLE, folder, rulesIn } from "./support/harness"
 
-/** `\`, spelled out so editors & tools don't mangle the escapes below */
+/** `\`, spelled out: editors and tools won't mangle the escapes below. */
 const BS = String.fromCharCode(92)
 
 describe("fixed bugs", () => {

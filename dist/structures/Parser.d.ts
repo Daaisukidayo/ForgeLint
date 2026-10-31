@@ -1,55 +1,55 @@
 import { IFunctionInfo, Rule } from "../types";
 import { FunctionRegistry } from "./FunctionRegistry";
-/** A call's arg */
+/** A call's argument. */
 export interface IField {
     start: number;
-    /** offset of the `;`/`]` after it, or the code's length if unclosed */
+    /** The offset of the `;` or `]` after it, or the code's length if unclosed. */
     end: number;
-    /** fns right inside it */
+    /** The functions right inside it. */
     calls: ICall[];
-    /** its text w/ escapes resolved, `null` if a fn's inside */
+    /** Its text with escapes resolved, `null` if a function is inside. */
     literal: string | null;
 }
-/** A fn call in code */
+/** A function call in code. */
 export interface ICall {
     fn: IFunctionInfo;
-    /** name as declared, e.g. `$authorID` for `$AUTHORID` */
+    /** The name as declared, for example `$authorID` for `$AUTHORID`. */
     spelling: string;
-    /** the `$` */
+    /** The `$`. */
     start: number;
-    /** the name w/o `!`, `#`, `@[...]` */
+    /** The name without `!`, `#` and `@[...]`. */
     nameStart: number;
     nameEnd: number;
-    /** `[`, `null` w/o brackets */
+    /** The `[`, `null` without brackets. */
     open: number | null;
-    /** `]`, `null` w/o brackets or unclosed */
+    /** The `]`, `null` without brackets or when unclosed. */
     close: number | null;
-    /** the `;`s between fields */
+    /** The `;`s between fields. */
     separators: number[];
     fields: IField[];
-    /** right after it */
+    /** Right after it. */
     end: number;
 }
-/** A problem before it gets a severity & position */
+/** A problem before it gets a severity and a position. */
 export interface IFinding {
     rule: Rule;
     message: string;
     start: number;
     end: number;
-    /** FS won't compile the code */
+    /** ForgeScript won't compile the code. */
     fatal?: boolean;
 }
 export interface IParsed {
-    /** top-level calls */
+    /** Top-level calls. */
     calls: ICall[];
-    /** syntax problems */
+    /** Syntax problems. */
     findings: IFinding[];
 }
-/** @returns the calls & all calls nested in them, in code order */
+/** @returns The calls and all calls nested in them, in code order. */
 export declare function flatten(calls: ICall[]): ICall[];
 /**
- * Reads ForgeScript like FS's compiler does, but doesn't bail on the 1st problem.
- * Code that compiles comes out as the same calls & fields
+ * Reads ForgeScript like the ForgeScript compiler does, but doesn't stop at the first problem.
+ * Code that compiles comes out as the same calls and fields.
  */
 export declare class Parser {
     private readonly code;
@@ -57,19 +57,19 @@ export declare class Parser {
     private readonly escaped;
     private index;
     private readonly findings;
-    /** `suggest` is the slow bit, so a name gets it once */
+    /** `suggest` is the slow part: a name gets it once. */
     private readonly guesses;
     private constructor();
-    /** @param escaped how an escaped `]` is written where the code lives, e.g. `\\]` in a JS string */
+    /** @param escaped How an escaped `]` is written where the code lives, for example `\\]` in a JavaScript string. */
     static parse(code: string, registry: FunctionRegistry, escaped?: string): IParsed;
     private top;
-    /** At a `$`: reads the call, or reports an unknown name & steps over the `$` */
+    /** At a `$`: reads the call, or reports an unknown name and steps over the `$`. */
     private call;
-    /** Reads a field up to its `;`/`]` & stops there */
+    /** Reads a field up to its `;` or `]` and stops there. */
     private field;
-    /** FS won't compile fields past the last arg */
+    /** ForgeScript won't compile fields past the last argument. */
     private tooMany;
-    /** @param read the fn FS reads instead, glued to the rest. It needs brackets, so it won't compile */
+    /** @param read The function ForgeScript reads instead, glued to the rest. It needs brackets: it won't compile. */
     private unknown;
     private find;
 }

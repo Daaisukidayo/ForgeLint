@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.bold = exports.grey = exports.cyan = exports.yellow = exports.red = exports.green = void 0;
 /**
- * @param codes ANSI SGR codes
- * @returns colorizer, a no-op when `NO_COLOR` is set
+ * @param codes ANSI SGR codes.
+ * @returns A colorizer, which does nothing when `NO_COLOR` is set.
  */
 const paint = (codes) => (text) => (process.env.NO_COLOR ? text : `\u001b[${codes}m${text}\u001b[0m`);
 exports.green = paint("32");

@@ -1,36 +1,43 @@
+import { indentAt } from "../functions/embedded"
 import { lineStarts, locate } from "../functions/text"
 import { Rule } from "../types"
 import { FunctionRegistry } from "./FunctionRegistry"
 import { ICall, Parser, flatten } from "./Parser"
 
-/** Replace `start`..`end` w/ `text` */
+/** Replaces `start`..`end` with `text`. */
 export interface IEdit {
     start: number
     end: number
     text: string
 }
 
-/** How the code sits in its file */
+/** How the code sits in its file. */
 export interface IFormatOptions {
-    /** real line break here? Default every `\n`. An escaped `\n` in a JS string isn't one */
+    /** Whether a real line break is here. Defaults to every `\n`. An escaped `\n` in a JavaScript string isn't one. */
     isLineBreak?: (index: number) => boolean
-    /** indentation of the line the code starts on, e.g. the `code:` line. Default none */
+    /**
+     * The indentation of the line the code starts on, for example the `code:` line.
+     * @default ""
+     */
     indent?: string
-    /** top-level lines go 1 level deeper than `indent`, the closing line in line w/ it. Default `false` */
+    /**
+     * Top-level lines go one level deeper than `indent`, and the closing line lines up with it.
+     * @default false
+     */
     alignToKey?: boolean
 }
 
-/** w/ these, nesting is a guess, so only names get fixed */
+/** With these, nesting is a guess: only names get fixed. */
 const BROKEN = new Set([Rule.unclosedBracket, Rule.unescapedBracket, Rule.strayBracket, Rule.missingBrackets])
 
-/** What a line can start w/: a fn, or a call's `;`/`]` */
+/** What a line can start with: a function, or a call's `;` or `]`. */
 interface IToken {
     kind: "call" | "separator" | "close"
-    /** for a fn: the call it's in (`null` at the top). For `;`/`]`: their own call */
+    /** For a function, the call it's in, `null` at the top. For a `;` or `]`, their own call. */
     call: ICall | null
 }
 
-/** @param edits mustn't overlap */
+/** @param edits They mustn't overlap. */
 export function applyEdits(text: string, edits: IEdit[]) {
     let out = ""
     let at = 0
@@ -44,11 +51,11 @@ export function applyEdits(text: string, edits: IEdit[]) {
 }
 
 /**
- * Formats ForgeScript w/o changing what it does: names get their declared case,
- * lines starting w/ a fn, `;` or `]` get indented by nesting. Text lines stay as written
+ * Formats ForgeScript without changing what it does: names get their declared case,
+ * and lines starting with a function, `;` or `]` get indented by nesting. Text lines stay as written.
  */
 export class Formatter {
-    /** @param indent spaces per level or `"tab"`. Default whatever the code uses, else 4 */
+    /** @param indent Spaces per level, or `"tab"`. Defaults to whatever the code uses, otherwise 4. */
     public constructor(
         public readonly registry: FunctionRegistry,
         private readonly indent?: number | "tab"
@@ -58,17 +65,12 @@ export class Formatter {
         return applyEdits(code, this.edits(code, options))
     }
 
-    /** @returns the edits, in code order */
+    /** @returns The edits, in code order. */
     public edits(code: string, options: IFormatOptions = {}): IEdit[] {
         const { calls, findings } = Parser.parse(code, this.registry)
-        const edits: IEdit[] = []
-
-        for (const call of flatten(calls)) {
-            const name = call.spelling.slice(1)
-            if (code.slice(call.nameStart, call.nameEnd) !== name) {
-                edits.push({ start: call.nameStart, end: call.nameEnd, text: name })
-            }
-        }
+        const edits: IEdit[] = flatten(calls)
+            .map((call) => ({ start: call.nameStart, end: call.nameEnd, text: call.spelling.slice(1) }))
+            .filter((edit) => code.slice(edit.start, edit.end) !== edit.text)
 
         if (!findings.some((finding) => BROKEN.has(finding.rule))) {
             edits.push(...new Layout(code, calls, options, this.indent).edits())
@@ -79,21 +81,21 @@ export class Formatter {
 }
 
 class Layout {
-    /** offsets right after a `[`, `;`, `]` or bracketless name */
+    /** Offsets right after a `[`, `;`, `]` or a name without brackets. */
     private readonly after = new Set<number>()
-    /** offset of a fn's `$`, a `;` or a `]` → what it is */
+    /** Maps the offset of a function's `$`, a `;` or a `]` to what it is. */
     private readonly tokens = new Map<number, IToken>()
-    /** line start → its indentation once formatted */
+    /** Maps a line start to its indentation once formatted. */
     private readonly indents = new Map<number, string>()
     private readonly isLineBreak: (index: number) => boolean
     private readonly starts: number[]
-    /** indentation of line 0 */
+    /** The indentation of line 0. */
     private readonly first: string
-    /** 1 level */
+    /** One level. */
     private readonly unit: string
-    /** indentation of top-level lines */
+    /** The indentation of top-level lines. */
     private readonly base: string
-    /** `alignToKey` */
+    /** The `alignToKey` option. */
     private readonly align: boolean
 
     public constructor(
@@ -114,7 +116,7 @@ class Layout {
         this.base = this.align ? this.first + this.unit : this.guessBase()
     }
 
-    /** @returns edits for every whitespace run between code on 2 lines */
+    /** @returns Edits for every whitespace run between code on two lines. */
     public edits() {
         const edits: IEdit[] = []
 
@@ -149,9 +151,9 @@ class Layout {
     }
 
     /**
-     * Kills trailing whitespace, empties blank lines & indents the next line.
-     * Skips the run if text touches it, b/c FS prints that whitespace
-     * @param end where the next non-whitespace is
+     * Removes trailing whitespace, empties blank lines and indents the next line.
+     * Skips the run if text touches it, because ForgeScript prints that whitespace.
+     * @param end Where the next non-whitespace is.
      */
     private run(start: number, end: number): IEdit[] {
         const token = this.tokens.get(end)
@@ -189,26 +191,22 @@ class Layout {
         return token.call ? this.indentOf(token.call.start) + this.unit : this.base
     }
 
-    /** @returns indentation of the offset's line, once formatted */
+    /** @returns The indentation of the offset's line, once formatted. */
     private indentOf(offset: number) {
         const start = this.lineStart(offset)
         return this.indents.get(start) ?? this.written(start)
     }
 
-    /** @returns a line's indentation as written */
+    /** @returns A line's indentation as written. */
     private written(start: number) {
-        if (start === 0) return this.first
-
-        let end = start
-        while (this.code[end] === " " || this.code[end] === "\t") end++
-        return this.code.slice(start, end)
+        return start === 0 ? this.first : indentAt(this.code, start)
     }
 
     private lineStart(offset: number) {
         return this.starts[locate(this.starts, offset).line - 1]
     }
 
-    /** @returns space, tab, real line break or its `\r`? */
+    /** @returns Whether it's a space, a tab, a real line break or its `\r`. */
     private blank(index: number) {
         const char = this.code[index]
         return (
@@ -216,7 +214,7 @@ class Layout {
         )
     }
 
-    /** @returns how much deeper than the `code:` line the 1st code line sits, `undefined` if it doesn't */
+    /** @returns How much deeper than the `code:` line the first code line sits, `undefined` if it doesn't. */
     private keyStep() {
         const base = this.guessBase()
         return base.length > this.first.length && base.startsWith(this.first)
@@ -224,7 +222,7 @@ class Layout {
             : undefined
     }
 
-    /** @returns the 1st code line's indentation, line 0's if the code starts there */
+    /** @returns The first code line's indentation, line 0's if the code starts there. */
     private guessBase() {
         for (let index = 0; index < this.code.length; index++) {
             if (!this.blank(index)) return this.written(this.lineStart(index))
@@ -232,7 +230,7 @@ class Layout {
         return this.first
     }
 
-    /** @returns the step nested fns are indented by most, `undefined` if they never are */
+    /** @returns The step nested functions are indented by most often, `undefined` if they never are. */
     private guessUnit() {
         const counts = new Map<string, number>()
 
@@ -251,15 +249,7 @@ class Layout {
             counts.set(step, (counts.get(step) ?? 0) + 1)
         }
 
-        let best: string | undefined
-        let most = 0
-        for (const [step, count] of counts) {
-            if (count > most || (count === most && step.length < best!.length)) {
-                best = step
-                most = count
-            }
-        }
-
-        return best
+        // the shorter one on a tie
+        return [...counts].sort(([a, x], [b, y]) => y - x || a.length - b.length)[0]?.[0]
     }
 }

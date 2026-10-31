@@ -20,7 +20,7 @@ const codesOf = (source, keys = CODE) => (0, script_1.scanScript)(source, keys).
         ].join("\n");
         strict_1.default.deepEqual(codesOf(source), ["$ping", "$authorID", "it's"]);
     });
-    (0, node_test_1.it)("resolve escapes, so \\\\] reaches ForgeScript as \\]", () => {
+    (0, node_test_1.it)("resolve escapes: \\\\] reaches ForgeScript as \\]", () => {
         strict_1.default.deepEqual(codesOf("x = { code: `$get[a\\\\]] \\` \\${x} \\n` }"), ["$get[a\\]] ` ${x} \n"]);
     });
     (0, node_test_1.it)("keep String.raw as written", () => {

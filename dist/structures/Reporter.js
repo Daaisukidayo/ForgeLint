@@ -9,25 +9,38 @@ const COLORS = {
     [types_1.Severity.warning]: paint_1.yellow,
     [types_1.Severity.info]: paint_1.cyan,
 };
-/** Prints problems by file, then a summary */
+/** Prints problems by file, then a summary. */
 class Reporter {
     write;
     started = performance.now();
-    /** @param write default `console.log` */
+    /** @param write Defaults to `console.log`. */
     constructor(write = (line) => console.log(line)) {
         this.write = write;
+    }
+    /**
+     * The header, every file, then the summary.
+     * @param functions How many are known.
+     * @returns How many errors there are.
+     */
+    print(reports, functions, notes = [], formatting = false, fixed = 0) {
+        const codes = reports.reduce((sum, report) => sum + report.codes, 0);
+        this.start(reports.length, codes, functions);
+        this.notes(notes);
+        for (const report of reports)
+            this.file(report, formatting);
+        return this.summary(reports, formatting, fixed);
     }
     start(files, codes, functions) {
         this.write(`${(0, paint_1.bold)((0, paint_1.cyan)("ForgeLint"))}  ${(0, text_1.plural)(codes, "code")} in ${(0, text_1.plural)(files, "file")}, ${(0, text_1.plural)(functions, "function")} known`);
     }
-    /** @param notes stuff that failed to load */
+    /** @param notes What failed to load. */
     notes(notes) {
         for (const note of notes)
             this.write((0, paint_1.grey)(`  ${note}`));
     }
     /**
-     * Prints nothing for a clean file
-     * @param formatting say if it isn't formatted too
+     * Prints nothing for a clean file.
+     * @param formatting Also say if it isn't formatted.
      */
     file(report, formatting = false) {
         const unformatted = formatting && report.formatted !== undefined;
@@ -44,9 +57,10 @@ class Reporter {
             this.write(`  ${(0, paint_1.yellow)("not formatted")}  ${(0, paint_1.grey)("forgelint --fix formats it")}`);
     }
     /**
-     * Counts & time
-     * @param formatting count unformatted files too
-     * @param fixed files `--fix` formatted
+     * Counts and time.
+     * @param formatting Count unformatted files too.
+     * @param fixed Files `--fix` formatted.
+     * @returns How many errors there are.
      */
     summary(reports, formatting = false, fixed = 0) {
         const problems = reports.flatMap((report) => report.problems);
@@ -59,7 +73,7 @@ class Reporter {
             this.write((0, paint_1.green)(`Formatted ${(0, text_1.plural)(fixed, "file")}.`));
         if (!problems.length && !unformatted) {
             this.write(`${(0, paint_1.green)("✓ No problems")} ${seconds}`);
-            return;
+            return 0;
         }
         const parts = [];
         if (errors)
@@ -71,8 +85,11 @@ class Reporter {
         if (unformatted)
             parts.push((0, paint_1.yellow)(`${(0, text_1.plural)(unformatted, "file")} not formatted`));
         this.write(`${errors || unformatted ? (0, paint_1.red)("✗") : (0, paint_1.yellow)("!")} ${parts.join(", ")} ${seconds}`);
-        if (infos && !fixed)
-            this.write((0, paint_1.grey)("forgelint --fix fixes the info ones"));
+        // of the rules, `--fix` only fixes the case of names
+        if (!fixed && problems.some((problem) => problem.rule === types_1.Rule.functionCase)) {
+            this.write((0, paint_1.grey)("forgelint --fix fixes the function-case ones"));
+        }
+        return errors;
     }
 }
 exports.Reporter = Reporter;

@@ -1,21 +1,27 @@
-/** A string literal in a file */
+/** A string literal in a file. */
 export interface ILiteral {
-    /** its text, quotes excl. */
+    /** Its text, quotes excluded. */
     start: number;
     end: number;
-    /** `String.raw`: escapes stay as written */
+    /** `String.raw`: escapes stay as written. */
     raw: boolean;
-    /** `${...}`s, from `$` to after `}` */
+    /** Its `${...}`s, from the `$` to after the `}`. */
     holes: Array<[number, number]>;
+    /** For a command's `code`: its `type`, if that is a plain string. Its text, quotes excluded. */
+    event?: {
+        name: string;
+        start: number;
+        end: number;
+    };
 }
-/** A custom fn's param, as written */
+/** A custom function's parameter, as written. */
 export interface IParam {
     name: string;
     required?: boolean;
     rest?: boolean;
     type?: string;
 }
-/** A native's arg written as an object. Its `enum` is skipped, the values can't be read w/o running the code */
+/** A native function's argument written as an object. Its `enum` is skipped: the values can't be read without running the code. */
 export interface IArgObject {
     name: string;
     required: boolean;
@@ -23,37 +29,37 @@ export interface IArgObject {
     condition: boolean;
     type: string;
 }
-/** `Arg.requiredString("name", ...)`. Gets run w/ the bot's FS `Arg` later */
+/** `Arg.requiredString("name", ...)`. It gets run with the bot's ForgeScript `Arg` later. */
 export interface IArgCall {
     method: string;
-    /** literals, `undefined` for anything else (like an enum) */
+    /** Literals, `undefined` for anything else, like an enum. */
     values: Array<string | boolean | undefined>;
 }
-/** A fn a file defines, read w/o running it */
+/** A function a file defines, read without running it. */
 export interface IDefinition {
-    /** custom ones w/o `$`, natives w/ */
+    /** Custom ones without the `$`, native ones with it. */
     name: string;
     kind: "native" | "custom";
-    /** `null` if it's not a plain `true`/`false` */
+    /** `null` if it's not a plain `true` or `false`. */
     brackets: boolean | undefined | null;
-    /** a custom fn's, `null` if not plain */
+    /** A custom function's, `null` if not plain. */
     params: Array<string | IParam> | null;
     firstParamCondition: boolean;
-    /** a native's, `null` if not plain */
+    /** A native function's, `null` if not plain. */
     args?: Array<IArgObject | IArgCall> | null;
-    /** a native's, `null` if not plain */
+    /** A native function's, `null` if not plain. */
     unwrap?: boolean | null;
     aliases?: string[];
     deprecated?: boolean;
 }
 export interface IScriptScan {
-    /** values of the code keys */
+    /** The values of the code keys. */
     literals: ILiteral[];
     definitions: IDefinition[];
 }
 /**
- * Finds ForgeScript in a JS/TS file w/o running it
- * @param keys keys holding ForgeScript, e.g. `code`
+ * Finds ForgeScript in a JavaScript or TypeScript file without running it.
+ * @param keys Keys holding ForgeScript, for example `code`.
  */
 export declare function scanScript(source: string, keys: Set<string>): IScriptScan;
 //# sourceMappingURL=script.d.ts.map

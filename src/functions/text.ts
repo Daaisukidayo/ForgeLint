@@ -1,6 +1,12 @@
-import { IFunctionInfo } from "../types"
+import { IFunctionInfo, IProblem } from "../types"
 
-/** @returns offset of each line's start, 1st is 0 */
+/** @returns The problem without its offsets, for output. */
+export function brief(problem: IProblem) {
+    const { rule, severity, message, line, column } = problem
+    return { rule, severity, message, line, column }
+}
+
+/** @returns The offset of each line's start. The first one is 0. */
 export function lineStarts(text: string, isLineBreak = (index: number) => text[index] === "\n") {
     const starts = [0]
     for (let i = 0; i < text.length; i++) if (isLineBreak(i)) starts.push(i + 1)
@@ -8,8 +14,8 @@ export function lineStarts(text: string, isLineBreak = (index: number) => text[i
 }
 
 /**
- * @param starts from `lineStarts`
- * @returns 1-based line & column
+ * @param starts From `lineStarts`.
+ * @returns The line and column, both starting at 1.
  */
 export function locate(starts: number[], offset: number) {
     let low = 0
@@ -24,7 +30,7 @@ export function locate(starts: number[], offset: number) {
     return { line: low + 1, column: offset - starts[low] + 1 }
 }
 
-/** Levenshtein + swapping 2 neighbors. Bails w/ `max + 1` once it's over `max` */
+/** Levenshtein distance, plus swapping two neighbors. Stops with `max + 1` once it's over `max`. */
 export function distance(a: string, b: string, max: number) {
     if (Math.abs(a.length - b.length) > max) return max + 1
 
@@ -54,15 +60,39 @@ export function distance(a: string, b: string, max: number) {
     return previous[b.length]
 }
 
-/** @returns e.g. `$sendMessage[channel ID;content?;return message ID?]` */
-export function signature(fn: IFunctionInfo) {
-    // args unknown, but it still takes some
-    if (fn.loose && fn.brackets !== undefined) return `${fn.name}[...args]`
-    if (fn.brackets === undefined || !fn.args.length) return fn.name
+/** @returns The closest of `names`, if it's close enough to be a typo. Case doesn't count. */
+export function closest(name: string, names: Iterable<string>) {
+    const wanted = name.toLowerCase()
+    // `$a` is 1 edit away from tons of names, none of them meant
+    const max = wanted.length > 5 ? 2 : wanted.length > 3 ? 1 : 0
+    if (!max) return
 
-    const args = fn.args.map((arg) => `${arg.name}${arg.rest ? "..." : ""}${arg.required ? "" : "?"}`)
-    return `${fn.name}[${args.join(";")}]`
+    let best: string | undefined
+    let bestDistance = max + 1
+
+    for (const candidate of names) {
+        const edits = distance(wanted, candidate.toLowerCase(), max)
+        if (edits < bestDistance) {
+            best = candidate
+            bestDistance = edits
+        }
+    }
+
+    return best
 }
 
-/** @returns `1 argument`, `2 arguments` */
+/**
+ * @param name For example the alias the code used. Defaults to its own name.
+ * @returns For example `$sendMessage[channel ID;content?;return message ID?]`.
+ */
+export function signature(fn: IFunctionInfo, name = fn.name) {
+    // args unknown, but it still takes some
+    if (fn.loose && fn.brackets !== undefined) return `${name}[...args]`
+    if (fn.brackets === undefined || !fn.args.length) return name
+
+    const args = fn.args.map((arg) => `${arg.name}${arg.rest ? "..." : ""}${arg.required ? "" : "?"}`)
+    return `${name}[${args.join(";")}]`
+}
+
+/** @returns For example `1 argument` or `2 arguments`. */
 export const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`

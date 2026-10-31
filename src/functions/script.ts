@@ -1,28 +1,30 @@
 import { cook } from "./embedded"
 
-/** A JS/TS token, just what ForgeLint needs */
+/** A JavaScript or TypeScript token, only what ForgeLint needs. */
 interface IToken {
     type: "name" | "string" | "template" | "punct" | "other"
     start: number
     end: number
-    /** text, quotes incl. */
+    /** Its text, quotes included. */
     value: string
-    /** a template's `${...}`s, from `$` to after `}` */
+    /** A template's `${...}`s, from the `$` to after the `}`. */
     holes: Array<[number, number]>
 }
 
-/** A string literal in a file */
+/** A string literal in a file. */
 export interface ILiteral {
-    /** its text, quotes excl. */
+    /** Its text, quotes excluded. */
     start: number
     end: number
-    /** `String.raw`: escapes stay as written */
+    /** `String.raw`: escapes stay as written. */
     raw: boolean
-    /** `${...}`s, from `$` to after `}` */
+    /** Its `${...}`s, from the `$` to after the `}`. */
     holes: Array<[number, number]>
+    /** For a command's `code`: its `type`, if that is a plain string. Its text, quotes excluded. */
+    event?: { name: string; start: number; end: number }
 }
 
-/** A custom fn's param, as written */
+/** A custom function's parameter, as written. */
 export interface IParam {
     name: string
     required?: boolean
@@ -30,7 +32,7 @@ export interface IParam {
     type?: string
 }
 
-/** A native's arg written as an object. Its `enum` is skipped, the values can't be read w/o running the code */
+/** A native function's argument written as an object. Its `enum` is skipped: the values can't be read without running the code. */
 export interface IArgObject {
     name: string
     required: boolean
@@ -39,81 +41,68 @@ export interface IArgObject {
     type: string
 }
 
-/** `Arg.requiredString("name", ...)`. Gets run w/ the bot's FS `Arg` later */
+/** `Arg.requiredString("name", ...)`. It gets run with the bot's ForgeScript `Arg` later. */
 export interface IArgCall {
     method: string
-    /** literals, `undefined` for anything else (like an enum) */
+    /** Literals, `undefined` for anything else, like an enum. */
     values: Array<string | boolean | undefined>
 }
 
-/** A fn a file defines, read w/o running it */
+/** A function a file defines, read without running it. */
 export interface IDefinition {
-    /** custom ones w/o `$`, natives w/ */
+    /** Custom ones without the `$`, native ones with it. */
     name: string
     kind: "native" | "custom"
-    /** `null` if it's not a plain `true`/`false` */
+    /** `null` if it's not a plain `true` or `false`. */
     brackets: boolean | undefined | null
-    /** a custom fn's, `null` if not plain */
+    /** A custom function's, `null` if not plain. */
     params: Array<string | IParam> | null
     firstParamCondition: boolean
-    /** a native's, `null` if not plain */
+    /** A native function's, `null` if not plain. */
     args?: Array<IArgObject | IArgCall> | null
-    /** a native's, `null` if not plain */
+    /** A native function's, `null` if not plain. */
     unwrap?: boolean | null
     aliases?: string[]
     deprecated?: boolean
 }
 
-/** A plain value: a string or number, `true`/`false`, or a name like `ArgType.Number` */
+/** A plain value: a string or number, `true` or `false`, or a name like `ArgType.Number`. */
 interface IValue {
     text?: string
     flag?: boolean
-    /** `ArgType.Number` → `["ArgType", "Number"]` */
+    /** `ArgType.Number` becomes `["ArgType", "Number"]`. */
     chain?: string[]
 }
 
 export interface IScriptScan {
-    /** values of the code keys */
+    /** The values of the code keys. */
     literals: ILiteral[]
     definitions: IDefinition[]
 }
 
-/** An open bracket while scanning */
+/** An open bracket while scanning. */
 interface IFrame {
     char: string
-    /** an object's keys → their value's token idx */
+    /** Maps an object's keys to their value's token index. */
     keys?: Map<string, number>
-    /** `NativeFunction` for `new NativeFunction({`, same for `ForgeFunction` */
+    /** `NativeFunction` for `new NativeFunction({`, and the same for `ForgeFunction`. */
     ctor?: string
+    /** Its `code`, if it's a literal. */
+    code?: ILiteral
 }
 
-/** a `/` after these starts a regex, not a division */
-const BEFORE_REGEX = new Set([
-    "return",
-    "typeof",
-    "case",
-    "do",
-    "else",
-    "in",
-    "of",
-    "new",
-    "delete",
-    "void",
-    "throw",
-    "instanceof",
-    "yield",
-    "await",
-])
+/** A `/` after these starts a regex, not a division. */
+const BEFORE_REGEX = new Set("return typeof case do else in of new delete void throw instanceof yield await".split(" "))
 
 const OPENERS: Record<string, string> = { "}": "{", ")": "(", "]": "[" }
 
 const CONSTRUCTORS = new Set(["NativeFunction", "ForgeFunction"])
 
-/** JS lets any non-ASCII char into names */
+/** JavaScript lets any non-ASCII character into names. */
 const isNameChar = (char: string, first: boolean) =>
     (first ? /[A-Za-z_$]/ : /[\w$]/).test(char) || char.charCodeAt(0) > 127
 
-/** Splits JS/TS into names, strings, templates & punctuation. Skips comments & regexes */
+/** Splits JavaScript or TypeScript into names, strings, templates and punctuation. Skips comments and regexes. */
 class Tokenizer {
     private index = 0
 
@@ -125,7 +114,7 @@ class Tokenizer {
         return tokens
     }
 
-    /** @param previous to tell a regex from a division */
+    /** @param previous To tell a regex from a division. */
     private next(previous?: IToken): IToken | null {
         this.skipBlank()
 
@@ -159,7 +148,7 @@ class Tokenizer {
         return { type, start, end: this.index, value: source.slice(start, this.index), holes }
     }
 
-    /** whitespace, comments & a shebang */
+    /** Whitespace, comments and a shebang. */
     private skipBlank() {
         const { source } = this
 
@@ -194,7 +183,7 @@ class Tokenizer {
         }
     }
 
-    /** @returns its `${...}`s */
+    /** @returns Its `${...}`s. */
     private template() {
         const { source } = this
         const holes: Array<[number, number]> = []
@@ -218,7 +207,7 @@ class Tokenizer {
         return holes
     }
 
-    /** Skips a `${...}`'s insides, up to & incl. its `}` */
+    /** Skips the inside of a `${...}`, up to and including its `}`. */
     private expression() {
         let depth = 0
         let previous: IToken | undefined
@@ -259,25 +248,22 @@ class Tokenizer {
     }
 }
 
-/** @returns a plain string's text, `null` if it's no string or has `${...}` */
+/** @returns A plain string's text, `null` if it's no string or has a `${...}`. */
 function textOf(source: string, token: IToken | undefined) {
     if (!token || (token.type !== "string" && token.type !== "template") || token.holes.length) return null
     return cook(source, { start: token.start + 1, end: token.end - 1, raw: false, holes: [] }).code
 }
 
-/** @returns the key a token would be in an object */
+/** @returns The key a token would be in an object. */
 function keyOf(source: string, token: IToken) {
     return token.type === "name" ? token.value : textOf(source, token)
 }
 
-/** @returns `true`/`false` if it's that, `undefined` w/o value, else `null` */
-function booleanAt(tokens: IToken[], index: number | undefined) {
-    if (index === undefined) return undefined
-    const { type, value } = tokens[index] ?? {}
-    return type === "name" && (value === "true" || value === "false") ? value === "true" : null
-}
+/** @returns `true` or `false` if it's that, `undefined` without a value, otherwise `null`. */
+const booleanAt = (source: string, tokens: IToken[], index: number | undefined) =>
+    index === undefined ? undefined : (valueAt(source, tokens, index).value?.flag ?? null)
 
-/** @returns the literal starting at the idx, `String.raw` incl. */
+/** @returns The literal starting at the index, `String.raw` included. */
 function literalAt(tokens: IToken[], index: number): ILiteral | null {
     let raw = false
     if (tokens[index]?.value === "String" && tokens[index + 1]?.value === "." && tokens[index + 2]?.value === "raw") {
@@ -291,10 +277,10 @@ function literalAt(tokens: IToken[], index: number): ILiteral | null {
     return { start: token.start + 1, end: token.end - 1, raw, holes: token.holes }
 }
 
-/** A thing read at an idx: `null` if it isn't plain. `next` = the idx right after it */
+/** Something read at an index: `null` if it isn't plain. `next` is the index right after it. */
 type Read<T> = { value: T | null; next: number }
 
-/** @returns idx of the top-level `,` or closing bracket that ends the value at `index` */
+/** @returns The index of the top-level `,` or closing bracket that ends the value at `index`. */
 function skip(tokens: IToken[], index: number) {
     let depth = 0
 
@@ -312,7 +298,7 @@ function skip(tokens: IToken[], index: number) {
     return tokens.length
 }
 
-/** Reads a string, number, `true`/`false` or `a.b.c`. Anything fancier = `null`, skipped */
+/** Reads a string, number, `true`, `false` or `a.b.c`. Anything fancier is `null` and skipped. */
 function valueAt(source: string, tokens: IToken[], index: number): Read<IValue> {
     const token = tokens[index]
     let value: IValue | null = null
@@ -336,62 +322,55 @@ function valueAt(source: string, tokens: IToken[], index: number): Read<IValue> 
     return { value: null, next: skip(tokens, index) }
 }
 
-/** Reads `{ key: value, ... }`. Values that aren't plain are `null` */
-function objectAt(source: string, tokens: IToken[], index: number): Read<Map<string, IValue | null>> {
-    if (tokens[index]?.value !== "{") return { value: null, next: index }
-
-    const keys = new Map<string, IValue | null>()
-    let i = index + 1
-
-    while (i < tokens.length && tokens[i].value !== "}") {
-        if (tokens[i].value === ",") {
-            i++
-            continue
-        }
-
-        // spreads, shorthands & methods aren't plain
-        const key = keyOf(source, tokens[i])
-        if (key === null || tokens[i + 1]?.value !== ":") return { value: null, next: index }
-
-        const { value, next } = valueAt(source, tokens, i + 2)
-        keys.set(key, value)
-        i = next
-    }
-
-    return i < tokens.length ? { value: keys, next: i + 1 } : { value: null, next: index }
-}
-
-/** Reads `[...]` w/ `item`. One item that isn't plain = `null` */
-function arrayAt<T>(tokens: IToken[], index: number | undefined, item: (index: number) => Read<T>): T[] | null {
-    if (index === undefined || tokens[index]?.value !== "[") return null
-
+/** Reads items up to `close`, with `,`s between. One item that isn't plain, or no `close`, gives `null`. */
+function listAt<T>(tokens: IToken[], index: number, close: string, item: (index: number) => Read<T>): Read<T[]> {
     const items: T[] = []
-    let i = index + 1
+    let i = index
 
-    while (i < tokens.length && tokens[i].value !== "]") {
+    while (i < tokens.length && tokens[i].value !== close) {
         if (tokens[i].value === ",") {
             i++
             continue
         }
 
         const { value, next } = item(i)
-        if (value === null) return null
+        if (value === null) return { value: null, next: index }
         items.push(value)
         i = next
     }
 
-    return i < tokens.length ? items : null
+    return i < tokens.length ? { value: items, next: i + 1 } : { value: null, next: index }
 }
 
-/** @returns `undefined` if the key's missing, `null` if it's not a plain `true`/`false` */
+/** Reads `{ key: value, ... }`. Values that aren't plain are `null`. */
+function objectAt(source: string, tokens: IToken[], index: number): Read<Map<string, IValue | null>> {
+    if (tokens[index]?.value !== "{") return { value: null, next: index }
+
+    const { value: pairs, next } = listAt(tokens, index + 1, "}", (i) => {
+        // spreads, shorthands & methods aren't plain
+        const key = keyOf(source, tokens[i])
+        if (key === null || tokens[i + 1]?.value !== ":") return { value: null, next: i }
+
+        const { value, next } = valueAt(source, tokens, i + 2)
+        return { value: [key, value] as const, next }
+    })
+
+    return { value: pairs && new Map(pairs), next }
+}
+
+/** Reads `[...]` with `item`. One item that isn't plain gives `null`. */
+const arrayAt = <T>(tokens: IToken[], index: number | undefined, item: (index: number) => Read<T>) =>
+    index === undefined || tokens[index]?.value !== "[" ? null : listAt(tokens, index + 1, "]", item).value
+
+/** @returns `undefined` if the key is missing, `null` if it's not a plain `true` or `false`. */
 const flagOf = (keys: Map<string, IValue | null>, key: string) =>
     keys.has(key) ? (keys.get(key)?.flag ?? null) : undefined
 
-/** `"Number"` or `ArgType.Number` */
+/** `"Number"` or `ArgType.Number`. */
 const typeOf = (value: IValue | null | undefined) =>
     value?.text ?? (value?.chain?.at(-2) === "ArgType" ? value.chain.at(-1) : undefined)
 
-/** A custom fn's param: `"a"` or `{ name: "b", required: false, type: ArgType.Number }` */
+/** A custom function's parameter: `"a"` or `{ name: "b", required: false, type: ArgType.Number }`. */
 function paramAt(source: string, tokens: IToken[], index: number): Read<string | IParam> {
     const text = textOf(source, tokens[index])
     if (text !== null) return { value: text, next: index + 1 }
@@ -415,7 +394,7 @@ function paramAt(source: string, tokens: IToken[], index: number): Read<string |
     return { value: param, next }
 }
 
-/** A native's arg: `{ name, type: ArgType.String, required, rest }` or `Arg.requiredString(...)` */
+/** A native function's argument: `{ name, type: ArgType.String, required, rest }` or `Arg.requiredString(...)`. */
 function argAt(source: string, tokens: IToken[], index: number): Read<IArgObject | IArgCall> {
     if (tokens[index]?.value === "{") {
         const { value: keys, next } = objectAt(source, tokens, index)
@@ -441,39 +420,27 @@ function argAt(source: string, tokens: IToken[], index: number): Read<IArgObject
 
     if (chain.at(-2) !== "Arg" || tokens[at + 1]?.value !== "(") return { value: null, next: index }
 
-    const values: IArgCall["values"] = []
-    let i = at + 2
-
-    while (i < tokens.length && tokens[i].value !== ")") {
-        if (tokens[i].value === ",") {
-            i++
-            continue
-        }
-
+    const { value: values, next } = listAt(tokens, at + 2, ")", (i) => {
         const { value, next } = valueAt(source, tokens, i)
-        values.push(value?.flag ?? value?.text)
-        i = next
-    }
+        return { value: value?.flag ?? value?.text, next }
+    })
 
-    return i < tokens.length ? { value: { method: chain.at(-1)!, values }, next: i + 1 } : { value: null, next: index }
+    return values ? { value: { method: chain.at(-1)!, values }, next } : { value: null, next: index }
 }
 
-/** @returns the fn a just-closed object defines: `new NativeFunction({...})`, `new ForgeFunction({...})` or `{ name, params, code }` */
+/** @returns The function a just-closed object defines: `new NativeFunction({...})`, `new ForgeFunction({...})` or `{ name, params, code }`. */
 function definitionOf(source: string, tokens: IToken[], frame: IFrame): IDefinition | null {
     const keys = frame.keys!
     const name = textOf(source, tokens[keys.get("name") ?? -1])
     if (name === null) return null
 
-    const brackets = booleanAt(tokens, keys.get("brackets"))
+    const brackets = booleanAt(source, tokens, keys.get("brackets"))
 
     if (frame.ctor === "NativeFunction") {
         if (!name.startsWith("$")) return null
 
-        const unwrap = booleanAt(tokens, keys.get("unwrap"))
-        const aliases = arrayAt(tokens, keys.get("aliases"), (i) => ({
-            value: textOf(source, tokens[i]),
-            next: i + 1,
-        }))
+        const unwrap = booleanAt(source, tokens, keys.get("unwrap"))
+        const aliases = arrayAt(tokens, keys.get("aliases"), (i) => ({ value: textOf(source, tokens[i]), next: i + 1 }))
 
         return {
             name,
@@ -484,7 +451,7 @@ function definitionOf(source: string, tokens: IToken[], frame: IFrame): IDefinit
             args: keys.has("args") ? arrayAt(tokens, keys.get("args"), (i) => argAt(source, tokens, i)) : [],
             unwrap: unwrap === undefined ? false : unwrap,
             aliases: aliases ?? [],
-            deprecated: booleanAt(tokens, keys.get("deprecated")) === true,
+            deprecated: booleanAt(source, tokens, keys.get("deprecated")) === true,
         }
     }
 
@@ -495,13 +462,20 @@ function definitionOf(source: string, tokens: IToken[], frame: IFrame): IDefinit
         kind: "custom",
         brackets,
         params: keys.has("params") ? arrayAt(tokens, keys.get("params"), (i) => paramAt(source, tokens, i)) : [],
-        firstParamCondition: booleanAt(tokens, keys.get("firstParamCondition")) === true,
+        firstParamCondition: booleanAt(source, tokens, keys.get("firstParamCondition")) === true,
     }
 }
 
+/** @returns A just-closed command's `type`. A slash command's, one with `data`, says how it registers and is no event. */
+function eventOf(source: string, tokens: IToken[], frame: IFrame): ILiteral["event"] {
+    const token = tokens[frame.keys!.get("type") ?? -1]
+    const name = frame.keys!.has("data") ? null : textOf(source, token)
+    return name === null ? undefined : { name, start: token.start + 1, end: token.end - 1 }
+}
+
 /**
- * Finds ForgeScript in a JS/TS file w/o running it
- * @param keys keys holding ForgeScript, e.g. `code`
+ * Finds ForgeScript in a JavaScript or TypeScript file without running it.
+ * @param keys Keys holding ForgeScript, for example `code`.
  */
 export function scanScript(source: string, keys: Set<string>): IScriptScan {
     const tokens = new Tokenizer(source).all()
@@ -529,6 +503,9 @@ export function scanScript(source: string, keys: Set<string>): IScriptScan {
             const [frame] = stack.splice(at)
             const definition = frame.keys && definitionOf(source, tokens, frame)
             if (definition) definitions.push(definition)
+
+            const event = frame.code && eventOf(source, tokens, frame)
+            if (event) frame.code!.event = event
             return
         }
 
@@ -545,6 +522,8 @@ export function scanScript(source: string, keys: Set<string>): IScriptScan {
         if (keys.has(key)) {
             const literal = literalAt(tokens, i + 2)
             if (literal) literals.push(literal)
+            // just `code`: other keys can sit next to a `type` that's no event
+            if (literal && key === "code") frame.code = literal
         }
     })
 

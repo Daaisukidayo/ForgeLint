@@ -11,11 +11,11 @@
 <li><a href="" aria-current="page">Formatter</a></li></ul>
 <h1>Class Formatter</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>Formats ForgeScript w/o changing what it does: names get their declared case,
-lines starting w/ a fn, <code>;</code> or <code>]</code> get indented by nesting. Text lines stay as written</p>
+<div class="tsd-comment tsd-typography"><p>Formats ForgeScript without changing what it does: names get their declared case,
+and lines starting with a function, <code>;</code> or <code>]</code> get indented by nesting. Text lines stay as written.</p>
 </div></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Formatter.ts#L50">src/structures/Formatter.ts:50</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/32e4a57666a788d5f7ad548c2be74553d545c4ad/src/structures/Formatter.ts#L57">src/structures/Formatter.ts:57</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -48,11 +48,11 @@ lines starting w/ a fn, <code>;</code> or <code>]</code> get indented by nesting
 <ul class="tsd-parameter-list">
 <li><span><span class="tsd-kind-parameter">registry</span>: <a href="FunctionRegistry.html" class="tsd-signature-type tsd-kind-class">FunctionRegistry</a></span></li>
 <li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">indent</span>: <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;tab&quot;</span></span>
-<div class="tsd-comment tsd-typography"><p>spaces per level or <code>&quot;tab&quot;</code>. Default whatever the code uses, else 4</p>
+<div class="tsd-comment tsd-typography"><p>Spaces per level, or <code>&quot;tab&quot;</code>. Defaults to whatever the code uses, otherwise 4.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="" class="tsd-signature-type tsd-kind-class">Formatter</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Formatter.ts#L52">src/structures/Formatter.ts:52</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/32e4a57666a788d5f7ad548c2be74553d545c4ad/src/structures/Formatter.ts#L59">src/structures/Formatter.ts:59</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="properties-1">Properties<a href="#properties-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -60,7 +60,7 @@ lines starting w/ a fn, <code>;</code> or <code>]</code> get indented by nesting
 <h3 class="tsd-anchor-link" id="registry"><code class="tsd-tag">Readonly</code><span>registry</span><a href="#registry" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">registry</span><span class="tsd-signature-symbol">:</span> <a href="FunctionRegistry.html" class="tsd-signature-type tsd-kind-class">FunctionRegistry</a></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Formatter.ts#L53">src/structures/Formatter.ts:53</a></li></ul></aside></section></section></details>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/32e4a57666a788d5f7ad548c2be74553d545c4ad/src/structures/Formatter.ts#L60">src/structures/Formatter.ts:60</a></li></ul></aside></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -75,10 +75,10 @@ lines starting w/ a fn, <code>;</code> or <code>]</code> get indented by nesting
 <ul class="tsd-parameter-list">
 <li><span><span class="tsd-kind-parameter">code</span>: <span class="tsd-signature-type">string</span></span></li>
 <li><span><span class="tsd-kind-parameter">options</span>: <a href="../interfaces/IFormatOptions.html" class="tsd-signature-type tsd-kind-interface">IFormatOptions</a><span class="tsd-signature-symbol"> = {}</span></span></li></ul></div>
-<h4 class="tsd-returns-title">Returns <a href="../interfaces/IEdit.html" class="tsd-signature-type tsd-kind-interface">IEdit</a><span class="tsd-signature-symbol">[]</span></h4><p>the edits, in code order</p>
+<h4 class="tsd-returns-title">Returns <a href="../interfaces/IEdit.html" class="tsd-signature-type tsd-kind-interface">IEdit</a><span class="tsd-signature-symbol">[]</span></h4><p>The edits, in code order.</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Formatter.ts#L62">src/structures/Formatter.ts:62</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/32e4a57666a788d5f7ad548c2be74553d545c4ad/src/structures/Formatter.ts#L69">src/structures/Formatter.ts:69</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="format"><span>format</span><a href="#format" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -92,7 +92,7 @@ lines starting w/ a fn, <code>;</code> or <code>]</code> get indented by nesting
 <li><span><span class="tsd-kind-parameter">options</span>: <a href="../interfaces/IFormatOptions.html" class="tsd-signature-type tsd-kind-interface">IFormatOptions</a><span class="tsd-signature-symbol"> = {}</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/cc5fb3a9676c42e9892bbba3217b4e1b6c27b6fc/src/structures/Formatter.ts#L57">src/structures/Formatter.ts:57</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/Daaisukidayo/ForgeLint/blob/32e4a57666a788d5f7ad548c2be74553d545c4ad/src/structures/Formatter.ts#L64">src/structures/Formatter.ts:64</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

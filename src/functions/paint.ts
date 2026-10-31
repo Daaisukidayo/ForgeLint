@@ -1,6 +1,6 @@
 /**
- * @param codes ANSI SGR codes
- * @returns colorizer, a no-op when `NO_COLOR` is set
+ * @param codes ANSI SGR codes.
+ * @returns A colorizer, which does nothing when `NO_COLOR` is set.
  */
 const paint = (codes: string) => (text: string) => (process.env.NO_COLOR ? text : `\u001b[${codes}m${text}\u001b[0m`)
 

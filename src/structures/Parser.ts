@@ -2,71 +2,71 @@ import { plural, signature } from "../functions/text"
 import { IFunctionInfo, Rule } from "../types"
 import { FunctionRegistry } from "./FunctionRegistry"
 
-/** A call's arg */
+/** A call's argument. */
 export interface IField {
     start: number
-    /** offset of the `;`/`]` after it, or the code's length if unclosed */
+    /** The offset of the `;` or `]` after it, or the code's length if unclosed. */
     end: number
-    /** fns right inside it */
+    /** The functions right inside it. */
     calls: ICall[]
-    /** its text w/ escapes resolved, `null` if a fn's inside */
+    /** Its text with escapes resolved, `null` if a function is inside. */
     literal: string | null
 }
 
-/** A fn call in code */
+/** A function call in code. */
 export interface ICall {
     fn: IFunctionInfo
-    /** name as declared, e.g. `$authorID` for `$AUTHORID` */
+    /** The name as declared, for example `$authorID` for `$AUTHORID`. */
     spelling: string
-    /** the `$` */
+    /** The `$`. */
     start: number
-    /** the name w/o `!`, `#`, `@[...]` */
+    /** The name without `!`, `#` and `@[...]`. */
     nameStart: number
     nameEnd: number
-    /** `[`, `null` w/o brackets */
+    /** The `[`, `null` without brackets. */
     open: number | null
-    /** `]`, `null` w/o brackets or unclosed */
+    /** The `]`, `null` without brackets or when unclosed. */
     close: number | null
-    /** the `;`s between fields */
+    /** The `;`s between fields. */
     separators: number[]
     fields: IField[]
-    /** right after it */
+    /** Right after it. */
     end: number
 }
 
-/** A problem before it gets a severity & position */
+/** A problem before it gets a severity and a position. */
 export interface IFinding {
     rule: Rule
     message: string
     start: number
     end: number
-    /** FS won't compile the code */
+    /** ForgeScript won't compile the code. */
     fatal?: boolean
 }
 
 export interface IParsed {
-    /** top-level calls */
+    /** Top-level calls. */
     calls: ICall[]
-    /** syntax problems */
+    /** Syntax problems. */
     findings: IFinding[]
 }
 
-/** FS names are letters & digits */
+/** ForgeScript names are letters and digits. */
 const WORD = /[A-Za-z][A-Za-z0-9]*/y
 
-/** @returns the calls & all calls nested in them, in code order */
+/** @returns The calls and all calls nested in them, in code order. */
 export function flatten(calls: ICall[]): ICall[] {
     return calls.flatMap((call) => [call, ...flatten(call.fields.flatMap((field) => field.calls))])
 }
 
 /**
- * Reads ForgeScript like FS's compiler does, but doesn't bail on the 1st problem.
- * Code that compiles comes out as the same calls & fields
+ * Reads ForgeScript like the ForgeScript compiler does, but doesn't stop at the first problem.
+ * Code that compiles comes out as the same calls and fields.
  */
 export class Parser {
     private index = 0
     private readonly findings: IFinding[] = []
-    /** `suggest` is the slow bit, so a name gets it once */
+    /** `suggest` is the slow part: a name gets it once. */
     private readonly guesses = new Map<string, string | undefined>()
 
     private constructor(
@@ -75,7 +75,7 @@ export class Parser {
         private readonly escaped: string
     ) {}
 
-    /** @param escaped how an escaped `]` is written where the code lives, e.g. `\\]` in a JS string */
+    /** @param escaped How an escaped `]` is written where the code lives, for example `\\]` in a JavaScript string. */
     public static parse(code: string, registry: FunctionRegistry, escaped = "\\]"): IParsed {
         const parser = new Parser(code, registry, escaped)
         return { calls: parser.top(), findings: parser.findings }
@@ -83,7 +83,7 @@ export class Parser {
 
     private top() {
         const calls: ICall[] = []
-        // text `[`s, so the `]` closing one isn't stray
+        // text `[`s: the `]` closing one isn't stray
         let open = 0
 
         while (this.index < this.code.length) {
@@ -110,7 +110,7 @@ export class Parser {
                         Rule.strayBracket,
                         this.index,
                         this.index + 1,
-                        `This ] closes nothing, so it's printed as text. If that's intended, escape it: ${this.escaped}`
+                        `This ] closes nothing and is printed as text. If that's intended, escape it: ${this.escaped}`
                     )
                 }
             }
@@ -121,7 +121,7 @@ export class Parser {
         return calls
     }
 
-    /** At a `$`: reads the call, or reports an unknown name & steps over the `$` */
+    /** At a `$`: reads the call, or reports an unknown name and steps over the `$`. */
     private call(): ICall | null {
         const start = this.index
         let index = start + 1
@@ -186,7 +186,7 @@ export class Parser {
                 Rule.unexpectedBrackets,
                 nameEnd,
                 nameEnd + 1,
-                `${spelling} takes no arguments, so this [ and what follows is printed as text`
+                `${spelling} takes no arguments: this [ and what follows is printed as text`
             )
             return call
         }
@@ -213,7 +213,7 @@ export class Parser {
         return call
     }
 
-    /** Reads a field up to its `;`/`]` & stops there */
+    /** Reads a field up to its `;` or `]` and stops there. */
     private field(owner: ICall): IField {
         const start = this.index
         const calls: ICall[] = []
@@ -258,7 +258,7 @@ export class Parser {
         return { start, end: Math.min(this.index, this.code.length), calls, literal: calls.length ? null : text }
     }
 
-    /** FS won't compile fields past the last arg */
+    /** ForgeScript won't compile fields past the last argument. */
     private tooMany(call: ICall) {
         const { fn } = call
         if (fn.loose || fn.args.some((arg) => arg.rest) || call.fields.length <= fn.args.length) return
@@ -267,12 +267,12 @@ export class Parser {
             Rule.tooManyArguments,
             call.separators[fn.args.length - 1] ?? call.open!,
             call.close ?? call.end,
-            `${call.spelling} takes at most ${plural(fn.args.length, "argument")}, got ${call.fields.length}: ${signature(fn)}`,
+            `${call.spelling} takes at most ${plural(fn.args.length, "argument")}, got ${call.fields.length}. Usage: ${signature(fn, call.spelling)}`,
             true
         )
     }
 
-    /** @param read the fn FS reads instead, glued to the rest. It needs brackets, so it won't compile */
+    /** @param read The function ForgeScript reads instead, glued to the rest. It needs brackets: it won't compile. */
     private unknown(start: number, end: number, word: string, read?: string) {
         const name = `$${word}`
         if (!this.guesses.has(name)) this.guesses.set(name, this.registry.suggest(name))
@@ -286,6 +286,6 @@ export class Parser {
     }
 
     private find(rule: Rule, start: number, end: number, message: string, fatal = false) {
-        this.findings.push(fatal ? { rule, message, start, end, fatal } : { rule, message, start, end })
+        this.findings.push({ rule, message, start, end, fatal })
     }
 }

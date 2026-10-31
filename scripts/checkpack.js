@@ -1,8 +1,8 @@
-// fails if `npm pack` would ship stray files or miss main, types or a native. Run after `npm run build`
+// fails if `npm pack` would ship stray files or miss a native or a file package.json points at. Run after `npm run build`
 const { execSync } = require("node:child_process")
 const { readdirSync } = require("node:fs")
 const { join, posix, relative, sep } = require("node:path")
-const { main, types } = require("../package.json")
+const { main, types, exports: subpaths } = require("../package.json")
 
 const root = join(__dirname, "..")
 
@@ -11,6 +11,13 @@ const [{ files }] = JSON.parse(execSync("npm pack --dry-run --json", { cwd: root
 const shipped = files.map((file) => file.path)
 
 const ROOT_FILES = ["README.md", "LICENSE", "package.json"]
+
+/** main, types & every `exports` target */
+const entries = [
+    main,
+    types,
+    ...Object.values(subpaths).flatMap((target) => (typeof target === "string" ? [target] : Object.values(target))),
+].map((path) => path.replace(/^\.\//, ""))
 
 /**
  * @param {string} path a shipped path
@@ -43,7 +50,7 @@ const stray = shipped.filter((path) => !belongs(path))
 if (stray.length)
     problems.push(`the package ships ${stray.length} file(s) it should not: ${stray.slice(0, 8).join(", ")}`)
 
-for (const entry of [main, types]) {
+for (const entry of entries) {
     if (!shipped.includes(entry)) problems.push(`the package does not ship ${entry}, which package.json points at`)
 }
 

@@ -2,28 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.scanScript = scanScript;
 const embedded_1 = require("./embedded");
-/** a `/` after these starts a regex, not a division */
-const BEFORE_REGEX = new Set([
-    "return",
-    "typeof",
-    "case",
-    "do",
-    "else",
-    "in",
-    "of",
-    "new",
-    "delete",
-    "void",
-    "throw",
-    "instanceof",
-    "yield",
-    "await",
-]);
+/** A `/` after these starts a regex, not a division. */
+const BEFORE_REGEX = new Set("return typeof case do else in of new delete void throw instanceof yield await".split(" "));
 const OPENERS = { "}": "{", ")": "(", "]": "[" };
 const CONSTRUCTORS = new Set(["NativeFunction", "ForgeFunction"]);
-/** JS lets any non-ASCII char into names */
+/** JavaScript lets any non-ASCII character into names. */
 const isNameChar = (char, first) => (first ? /[A-Za-z_$]/ : /[\w$]/).test(char) || char.charCodeAt(0) > 127;
-/** Splits JS/TS into names, strings, templates & punctuation. Skips comments & regexes */
+/** Splits JavaScript or TypeScript into names, strings, templates and punctuation. Skips comments and regexes. */
 class Tokenizer {
     source;
     index = 0;
@@ -36,7 +21,7 @@ class Tokenizer {
             tokens.push(token);
         return tokens;
     }
-    /** @param previous to tell a regex from a division */
+    /** @param previous To tell a regex from a division. */
     next(previous) {
         this.skipBlank();
         const { source } = this;
@@ -73,7 +58,7 @@ class Tokenizer {
         }
         return { type, start, end: this.index, value: source.slice(start, this.index), holes };
     }
-    /** whitespace, comments & a shebang */
+    /** Whitespace, comments and a shebang. */
     skipBlank() {
         const { source } = this;
         for (;;) {
@@ -111,7 +96,7 @@ class Tokenizer {
                 this.index++;
         }
     }
-    /** @returns its `${...}`s */
+    /** @returns Its `${...}`s. */
     template() {
         const { source } = this;
         const holes = [];
@@ -135,7 +120,7 @@ class Tokenizer {
         }
         return holes;
     }
-    /** Skips a `${...}`'s insides, up to & incl. its `}` */
+    /** Skips the inside of a `${...}`, up to and including its `}`. */
     expression() {
         let depth = 0;
         let previous;
@@ -178,24 +163,19 @@ class Tokenizer {
             this.index++;
     }
 }
-/** @returns a plain string's text, `null` if it's no string or has `${...}` */
+/** @returns A plain string's text, `null` if it's no string or has a `${...}`. */
 function textOf(source, token) {
     if (!token || (token.type !== "string" && token.type !== "template") || token.holes.length)
         return null;
     return (0, embedded_1.cook)(source, { start: token.start + 1, end: token.end - 1, raw: false, holes: [] }).code;
 }
-/** @returns the key a token would be in an object */
+/** @returns The key a token would be in an object. */
 function keyOf(source, token) {
     return token.type === "name" ? token.value : textOf(source, token);
 }
-/** @returns `true`/`false` if it's that, `undefined` w/o value, else `null` */
-function booleanAt(tokens, index) {
-    if (index === undefined)
-        return undefined;
-    const { type, value } = tokens[index] ?? {};
-    return type === "name" && (value === "true" || value === "false") ? value === "true" : null;
-}
-/** @returns the literal starting at the idx, `String.raw` incl. */
+/** @returns `true` or `false` if it's that, `undefined` without a value, otherwise `null`. */
+const booleanAt = (source, tokens, index) => index === undefined ? undefined : (valueAt(source, tokens, index).value?.flag ?? null);
+/** @returns The literal starting at the index, `String.raw` included. */
 function literalAt(tokens, index) {
     let raw = false;
     if (tokens[index]?.value === "String" && tokens[index + 1]?.value === "." && tokens[index + 2]?.value === "raw") {
@@ -207,7 +187,7 @@ function literalAt(tokens, index) {
         return null;
     return { start: token.start + 1, end: token.end - 1, raw, holes: token.holes };
 }
-/** @returns idx of the top-level `,` or closing bracket that ends the value at `index` */
+/** @returns The index of the top-level `,` or closing bracket that ends the value at `index`. */
 function skip(tokens, index) {
     let depth = 0;
     for (let i = index; i < tokens.length; i++) {
@@ -226,7 +206,7 @@ function skip(tokens, index) {
     }
     return tokens.length;
 }
-/** Reads a string, number, `true`/`false` or `a.b.c`. Anything fancier = `null`, skipped */
+/** Reads a string, number, `true`, `false` or `a.b.c`. Anything fancier is `null` and skipped. */
 function valueAt(source, tokens, index) {
     const token = tokens[index];
     let value = null;
@@ -251,51 +231,44 @@ function valueAt(source, tokens, index) {
         return { value, next };
     return { value: null, next: skip(tokens, index) };
 }
-/** Reads `{ key: value, ... }`. Values that aren't plain are `null` */
-function objectAt(source, tokens, index) {
-    if (tokens[index]?.value !== "{")
-        return { value: null, next: index };
-    const keys = new Map();
-    let i = index + 1;
-    while (i < tokens.length && tokens[i].value !== "}") {
-        if (tokens[i].value === ",") {
-            i++;
-            continue;
-        }
-        // spreads, shorthands & methods aren't plain
-        const key = keyOf(source, tokens[i]);
-        if (key === null || tokens[i + 1]?.value !== ":")
-            return { value: null, next: index };
-        const { value, next } = valueAt(source, tokens, i + 2);
-        keys.set(key, value);
-        i = next;
-    }
-    return i < tokens.length ? { value: keys, next: i + 1 } : { value: null, next: index };
-}
-/** Reads `[...]` w/ `item`. One item that isn't plain = `null` */
-function arrayAt(tokens, index, item) {
-    if (index === undefined || tokens[index]?.value !== "[")
-        return null;
+/** Reads items up to `close`, with `,`s between. One item that isn't plain, or no `close`, gives `null`. */
+function listAt(tokens, index, close, item) {
     const items = [];
-    let i = index + 1;
-    while (i < tokens.length && tokens[i].value !== "]") {
+    let i = index;
+    while (i < tokens.length && tokens[i].value !== close) {
         if (tokens[i].value === ",") {
             i++;
             continue;
         }
         const { value, next } = item(i);
         if (value === null)
-            return null;
+            return { value: null, next: index };
         items.push(value);
         i = next;
     }
-    return i < tokens.length ? items : null;
+    return i < tokens.length ? { value: items, next: i + 1 } : { value: null, next: index };
 }
-/** @returns `undefined` if the key's missing, `null` if it's not a plain `true`/`false` */
+/** Reads `{ key: value, ... }`. Values that aren't plain are `null`. */
+function objectAt(source, tokens, index) {
+    if (tokens[index]?.value !== "{")
+        return { value: null, next: index };
+    const { value: pairs, next } = listAt(tokens, index + 1, "}", (i) => {
+        // spreads, shorthands & methods aren't plain
+        const key = keyOf(source, tokens[i]);
+        if (key === null || tokens[i + 1]?.value !== ":")
+            return { value: null, next: i };
+        const { value, next } = valueAt(source, tokens, i + 2);
+        return { value: [key, value], next };
+    });
+    return { value: pairs && new Map(pairs), next };
+}
+/** Reads `[...]` with `item`. One item that isn't plain gives `null`. */
+const arrayAt = (tokens, index, item) => index === undefined || tokens[index]?.value !== "[" ? null : listAt(tokens, index + 1, "]", item).value;
+/** @returns `undefined` if the key is missing, `null` if it's not a plain `true` or `false`. */
 const flagOf = (keys, key) => keys.has(key) ? (keys.get(key)?.flag ?? null) : undefined;
-/** `"Number"` or `ArgType.Number` */
+/** `"Number"` or `ArgType.Number`. */
 const typeOf = (value) => value?.text ?? (value?.chain?.at(-2) === "ArgType" ? value.chain.at(-1) : undefined);
-/** A custom fn's param: `"a"` or `{ name: "b", required: false, type: ArgType.Number }` */
+/** A custom function's parameter: `"a"` or `{ name: "b", required: false, type: ArgType.Number }`. */
 function paramAt(source, tokens, index) {
     const text = textOf(source, tokens[index]);
     if (text !== null)
@@ -319,7 +292,7 @@ function paramAt(source, tokens, index) {
     }
     return { value: param, next };
 }
-/** A native's arg: `{ name, type: ArgType.String, required, rest }` or `Arg.requiredString(...)` */
+/** A native function's argument: `{ name, type: ArgType.String, required, rest }` or `Arg.requiredString(...)`. */
 function argAt(source, tokens, index) {
     if (tokens[index]?.value === "{") {
         const { value: keys, next } = objectAt(source, tokens, index);
@@ -343,34 +316,24 @@ function argAt(source, tokens, index) {
     }
     if (chain.at(-2) !== "Arg" || tokens[at + 1]?.value !== "(")
         return { value: null, next: index };
-    const values = [];
-    let i = at + 2;
-    while (i < tokens.length && tokens[i].value !== ")") {
-        if (tokens[i].value === ",") {
-            i++;
-            continue;
-        }
+    const { value: values, next } = listAt(tokens, at + 2, ")", (i) => {
         const { value, next } = valueAt(source, tokens, i);
-        values.push(value?.flag ?? value?.text);
-        i = next;
-    }
-    return i < tokens.length ? { value: { method: chain.at(-1), values }, next: i + 1 } : { value: null, next: index };
+        return { value: value?.flag ?? value?.text, next };
+    });
+    return values ? { value: { method: chain.at(-1), values }, next } : { value: null, next: index };
 }
-/** @returns the fn a just-closed object defines: `new NativeFunction({...})`, `new ForgeFunction({...})` or `{ name, params, code }` */
+/** @returns The function a just-closed object defines: `new NativeFunction({...})`, `new ForgeFunction({...})` or `{ name, params, code }`. */
 function definitionOf(source, tokens, frame) {
     const keys = frame.keys;
     const name = textOf(source, tokens[keys.get("name") ?? -1]);
     if (name === null)
         return null;
-    const brackets = booleanAt(tokens, keys.get("brackets"));
+    const brackets = booleanAt(source, tokens, keys.get("brackets"));
     if (frame.ctor === "NativeFunction") {
         if (!name.startsWith("$"))
             return null;
-        const unwrap = booleanAt(tokens, keys.get("unwrap"));
-        const aliases = arrayAt(tokens, keys.get("aliases"), (i) => ({
-            value: textOf(source, tokens[i]),
-            next: i + 1,
-        }));
+        const unwrap = booleanAt(source, tokens, keys.get("unwrap"));
+        const aliases = arrayAt(tokens, keys.get("aliases"), (i) => ({ value: textOf(source, tokens[i]), next: i + 1 }));
         return {
             name,
             kind: "native",
@@ -380,7 +343,7 @@ function definitionOf(source, tokens, frame) {
             args: keys.has("args") ? arrayAt(tokens, keys.get("args"), (i) => argAt(source, tokens, i)) : [],
             unwrap: unwrap === undefined ? false : unwrap,
             aliases: aliases ?? [],
-            deprecated: booleanAt(tokens, keys.get("deprecated")) === true,
+            deprecated: booleanAt(source, tokens, keys.get("deprecated")) === true,
         };
     }
     if (frame.ctor !== "ForgeFunction" && !(keys.has("params") && keys.has("code")))
@@ -390,12 +353,18 @@ function definitionOf(source, tokens, frame) {
         kind: "custom",
         brackets,
         params: keys.has("params") ? arrayAt(tokens, keys.get("params"), (i) => paramAt(source, tokens, i)) : [],
-        firstParamCondition: booleanAt(tokens, keys.get("firstParamCondition")) === true,
+        firstParamCondition: booleanAt(source, tokens, keys.get("firstParamCondition")) === true,
     };
 }
+/** @returns A just-closed command's `type`. A slash command's, one with `data`, says how it registers and is no event. */
+function eventOf(source, tokens, frame) {
+    const token = tokens[frame.keys.get("type") ?? -1];
+    const name = frame.keys.has("data") ? null : textOf(source, token);
+    return name === null ? undefined : { name, start: token.start + 1, end: token.end - 1 };
+}
 /**
- * Finds ForgeScript in a JS/TS file w/o running it
- * @param keys keys holding ForgeScript, e.g. `code`
+ * Finds ForgeScript in a JavaScript or TypeScript file without running it.
+ * @param keys Keys holding ForgeScript, for example `code`.
  */
 function scanScript(source, keys) {
     const tokens = new Tokenizer(source).all();
@@ -422,6 +391,9 @@ function scanScript(source, keys) {
             const definition = frame.keys && definitionOf(source, tokens, frame);
             if (definition)
                 definitions.push(definition);
+            const event = frame.code && eventOf(source, tokens, frame);
+            if (event)
+                frame.code.event = event;
             return;
         }
         const frame = stack.at(-1);
@@ -439,6 +411,9 @@ function scanScript(source, keys) {
             const literal = literalAt(tokens, i + 2);
             if (literal)
                 literals.push(literal);
+            // just `code`: other keys can sit next to a `type` that's no event
+            if (literal && key === "code")
+                frame.code = literal;
         }
     });
     return { literals, definitions };

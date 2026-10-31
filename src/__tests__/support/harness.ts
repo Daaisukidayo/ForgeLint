@@ -3,23 +3,23 @@ import { dirname, join } from "node:path"
 import { after } from "node:test"
 import { Formatter, FunctionRegistry, Linter, Project, RuleSettings, fromCustom } from "../.."
 
-/** the repo, tests use its FS */
+/** The repository. Tests use its ForgeScript. */
 export const ROOT = join(__dirname, "..", "..", "..")
 
 export const EXAMPLE = join(ROOT, "example")
 
-/** FS's fns + a custom `$greet[name]` */
+/** ForgeScript's functions plus a custom `$greet[name]`. */
 export const registry = new FunctionRegistry(new Project({}, ROOT).functions.functions)
 registry.add(fromCustom({ name: "greet", params: ["name"], code: "" }, "test"))
 
 export const lint = (code: string, rules?: RuleSettings) => new Linter(registry, rules).lint(code)
 
-/** @returns broken rules, in code order */
+/** @returns The broken rules, in code order. */
 export const rulesIn = (code: string, rules?: RuleSettings) => lint(code, rules).map((problem) => problem.rule)
 
 export const format = (code: string, indent?: number | "tab") => new Formatter(registry, indent).format(code)
 
-/** temp dirs, nuked after the file */
+/** Temporary folders, removed after the file. */
 const made: string[] = []
 
 after(() => {
@@ -27,8 +27,8 @@ after(() => {
 })
 
 /**
- * @param files path → content
- * @returns a temp dir w/ them, inside the repo so its FS gets found
+ * @param files Maps a path to its content.
+ * @returns A temporary folder with them, inside the repository for its ForgeScript to be found.
  */
 export function folder(files: Record<string, string>) {
     const parent = join(ROOT, ".test-tmp")

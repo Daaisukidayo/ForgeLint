@@ -21,7 +21,7 @@ describe("JS & TS files", () => {
         assert.deepEqual(codesOf(source), ["$ping", "$authorID", "it's"])
     })
 
-    it("resolve escapes, so \\\\] reaches ForgeScript as \\]", () => {
+    it("resolve escapes: \\\\] reaches ForgeScript as \\]", () => {
         assert.deepEqual(codesOf("x = { code: `$get[a\\\\]] \\` \\${x} \\n` }"), ["$get[a\\]] ` ${x} \n"])
     })
 

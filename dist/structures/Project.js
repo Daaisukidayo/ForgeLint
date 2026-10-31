@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Project = void 0;
-exports.checkText = checkText;
 const node_fs_1 = require("node:fs");
 const node_path_1 = require("node:path");
+const check_1 = require("../functions/check");
 const convert_1 = require("../functions/convert");
 const embedded_1 = require("../functions/embedded");
 const packages_1 = require("../functions/packages");
@@ -13,14 +13,14 @@ const Formatter_1 = require("./Formatter");
 const FunctionRegistry_1 = require("./FunctionRegistry");
 const Linter_1 = require("./Linter");
 const EXTENSIONS = new Set([".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"]);
-/** skipped at the top of a walk, unless included by path */
+/** Skipped at the top of a walk, unless included by path. */
 const BUILD_DIRS = new Set(["dist", "build", "docs", "coverage"]);
-/** cfgs can give 1 string or an array */
+/** Configs can give one string or an array. */
 const listOf = (value) => (value === undefined ? [] : [value].flat());
 const readable = (path) => EXTENSIONS.has((0, node_path_1.extname)(path)) && !/\.d\.[cm]?ts$/.test(path);
-/** @returns relative to the root, `/`-separated */
+/** @returns The path relative to the root, `/`-separated. */
 const shown = (path, root) => (0, node_path_1.relative)(root, path).split(node_path_1.sep).join("/");
-/** If a fn's args aren't plain, they aren't checked */
+/** If a function's arguments aren't plain, they aren't checked. */
 function infoOf(definition, source, forge) {
     const { name, kind, brackets, params, firstParamCondition } = definition;
     if (kind === "native") {
@@ -44,34 +44,21 @@ function infoOf(definition, source, forge) {
         return FunctionRegistry_1.FunctionRegistry.loose(name, source, brackets ?? false);
     return (0, convert_1.fromCustom)({ name, params: params, brackets: brackets ?? undefined, firstParamCondition, code: "" }, source, forge.ArgType);
 }
-/** Lints & formats a file's codes */
-function checkText(text, codes, linter, formatter, alignToKey = true) {
-    const starts = (0, text_1.lineStarts)(text);
-    const problems = [];
-    const edits = [];
-    for (const embedded of codes) {
-        problems.push(...(0, embedded_1.problemsInFile)(linter.lint(embedded.code, embedded.escapedBracket), embedded, starts));
-        edits.push(...(0, embedded_1.editsInFile)(text, embedded, formatter.edits(embedded.code, { ...embedded, alignToKey })));
-    }
-    const formatted = (0, Formatter_1.applyEdits)(text, edits);
-    return {
-        problems: problems.sort((a, b) => a.start - b.start || a.end - b.end),
-        formatted: formatted === text ? undefined : formatted,
-    };
-}
-/** A bot's files, checked together */
+/** A bot's files, checked together. */
 class Project {
     config;
     root;
-    /** what failed to load. Shown, not fatal */
+    /** What failed to load. Shown, not fatal. */
     notes = [];
     keys;
     loaded = null;
-    /** set w/ `loaded` */
+    /** Set with `loaded`. */
     forge = null;
+    /** What a command's `type` can be, set with `loaded`. `undefined` means unchecked: the events of ForgeScript itself couldn't be read. */
+    events;
     /**
-     * @param root what cfg paths are relative to. Default the cwd
-     * @throws on a bad cfg
+     * @param root What config paths are relative to. Defaults to the current folder.
+     * @throws On a bad config.
      */
     constructor(config = {}, root = process.cwd()) {
         this.config = config;
@@ -86,43 +73,49 @@ class Project {
         }
         this.keys = new Set(config.properties === undefined ? ["code"] : listOf(config.properties));
     }
-    /** @returns how many files it wrote */
+    /** @returns How many files it wrote. */
     static write(reports) {
-        let written = 0;
-        for (const report of reports) {
-            if (report.formatted === undefined)
-                continue;
+        const changed = reports.filter((report) => report.formatted !== undefined);
+        for (const report of changed)
             (0, node_fs_1.writeFileSync)(report.path, report.formatted, "utf8");
-            written++;
-        }
-        return written;
+        return changed.length;
     }
     /**
-     * Fns code can call, minus the ones the files define: exts', FS's, the cfg's. Loaded once
-     * @throws if ForgeScript isn't installed
+     * The functions code can call, minus the ones the files define: the extensions', ForgeScript's and the config's. Loaded once.
+     * @throws If ForgeScript isn't installed.
      */
     get functions() {
         if (this.loaded)
             return this.loaded;
         const forgescript = (0, packages_1.findPackage)(packages_1.FORGESCRIPT, this.root);
         if (!forgescript) {
-            throw new Error(`Can't find ${packages_1.FORGESCRIPT} from ${this.root}. ForgeLint reads its functions, so install it.`);
+            throw new Error(`Can't find ${packages_1.FORGESCRIPT} from ${this.root}. ForgeLint reads its functions: install it.`);
         }
         const registry = new FunctionRegistry_1.FunctionRegistry();
+        const events = new Set();
         const { Arg, ArgType } = require(forgescript);
         this.forge = { Arg, ArgType };
         const extensions = this.config.extensions === undefined ? (0, packages_1.extensionsOf)(this.root) : listOf(this.config.extensions);
         // like in `ForgeClient`: exts load 1st & keep their names
         for (const name of extensions) {
             const dir = (0, packages_1.findPackage)(name, this.root);
-            if (dir)
-                this.load(name, () => (0, packages_1.loadNatives)(dir, name, registry, ArgType));
+            if (dir) {
+                this.load(name, () => [
+                    ...(0, packages_1.loadNatives)(dir, name, registry, ArgType, (0, packages_1.touchesCaller)(dir)),
+                    ...(0, packages_1.loadEvents)(dir, events),
+                ]);
+            }
             else
-                this.notes.push(`Extension ${name} isn't installed, so its functions are unknown.`);
+                this.notes.push(`Extension ${name} isn't installed: its functions & events are unknown.`);
         }
         this.load("ForgeScript", () => (0, packages_1.loadNatives)((0, node_path_1.join)(forgescript, "dist", "native"), "ForgeScript", registry, ArgType));
+        const native = new Set();
+        this.load("ForgeScript's events", () => (0, packages_1.loadEvents)((0, node_path_1.join)(forgescript, "dist", "handlers"), native));
+        // w/o FS's own, every command would look wrong
+        this.events = native.size ? new Set([...native, ...events]) : undefined;
         for (const dir of listOf(this.config.natives)) {
-            this.load(dir, () => (0, packages_1.loadNatives)((0, node_path_1.resolve)(this.root, dir), dir, registry, ArgType));
+            const full = (0, node_path_1.resolve)(this.root, dir);
+            this.load(dir, () => (0, packages_1.loadNatives)(full, dir, registry, ArgType, (0, packages_1.touchesCaller)(full)));
         }
         for (const dir of listOf(this.config.functions)) {
             this.load(dir, () => (0, packages_1.loadCustomFunctions)((0, node_path_1.resolve)(this.root, dir), dir, registry, ArgType));
@@ -132,9 +125,9 @@ class Project {
         return (this.loaded = registry);
     }
     /**
-     * @param paths default the cfg's `include`, else the root
-     * @returns every file to check, absolute & sorted
-     * @throws if a path doesn't exist
+     * @param paths Defaults to the config's `include`, otherwise the root.
+     * @returns Every file to check, absolute and sorted.
+     * @throws If a path doesn't exist.
      */
     files(paths) {
         const targets = paths?.length
@@ -152,33 +145,47 @@ class Project {
         return [...found].sort();
     }
     /**
-     * Lints & formats every file
-     * @param paths default the cfg's `include`, else the root
-     * @throws if a path doesn't exist or ForgeScript isn't installed
+     * Lints and formats every file.
+     * @param paths Defaults to the config's `include`, otherwise the root.
+     * @param brackets Also escape each `]` a problem has a `fix` for, in `formatted`. The problems are then the fixed text's.
+     * @throws If a path doesn't exist or ForgeScript isn't installed.
      */
-    check(paths) {
+    check(paths, brackets = false) {
         const scanned = this.files(paths).map((path) => this.scan(path));
         // fns the files define count too
         const registry = new FunctionRegistry_1.FunctionRegistry(this.functions.functions);
-        for (const { path, definitions } of scanned) {
-            for (const definition of definitions)
-                registry.add(infoOf(definition, shown(path, this.root), this.forge));
+        for (const { path, text, definitions } of scanned) {
+            // a native whose file runs code w/ the caller's ctx may read its variables. Custom ones always may
+            const opaque = packages_1.CALLER.test(text);
+            for (const definition of definitions) {
+                registry.add({ opaque, ...infoOf(definition, shown(path, this.root), this.forge) });
+            }
         }
-        const linter = new Linter_1.Linter(registry, this.config.rules);
+        const linter = new Linter_1.Linter(registry, this.config.rules, this.events);
         const formatter = new Formatter_1.Formatter(registry, this.config.indent);
-        return scanned.map(({ path, text, codes }) => ({
-            path,
-            file: shown(path, this.root),
-            codes: codes.length,
-            ...checkText(text, codes, linter, formatter, this.config.alignToKey ?? true),
-        }));
+        const options = { properties: [...this.keys], alignToKey: this.config.alignToKey ?? true };
+        return scanned.map(({ path, text, codes }) => {
+            let current = text;
+            let result = (0, check_1.checkText)(text, codes, linter, formatter, options.alignToKey);
+            // 1 at a time: escaping an unescaped `]` often fixes the stray one after it. Each round escapes another `]`
+            for (let left = brackets ? text.split("]").length - 1 : 0; left > 0; left--) {
+                const fix = result.problems.find((problem) => problem.fix)?.fix;
+                if (!fix)
+                    break;
+                current = (0, Formatter_1.applyEdits)(current, [fix]);
+                result = (0, check_1.checkScript)(current, linter, formatter, options);
+            }
+            const final = result.formatted ?? current;
+            const formatted = final === text ? undefined : final;
+            return { path, file: shown(path, this.root), problems: result.problems, codes: codes.length, formatted };
+        });
     }
     scan(path) {
         const text = (0, node_fs_1.readFileSync)(path, "utf8");
         const { literals, definitions } = (0, script_1.scanScript)(text, this.keys);
         return { path, text, codes: literals.map((literal) => (0, embedded_1.cook)(text, literal)), definitions };
     }
-    /** @param top `dist` & co. only get skipped here, `commands/docs` is fine */
+    /** @param top Only here do `dist` and the like get skipped: `commands/docs` is fine. */
     walk(dir, found, top) {
         for (const entry of (0, node_fs_1.readdirSync)(dir, { withFileTypes: true })) {
             const path = (0, node_path_1.join)(dir, entry.name);
@@ -192,7 +199,7 @@ class Project {
                 found.add(path);
         }
     }
-    /** @returns whether the cfg's `exclude` names it, by name or path */
+    /** @returns Whether the config's `exclude` names it, by name or path. */
     excluded(path) {
         const file = shown(path, this.root);
         const name = file.split("/").at(-1);
@@ -201,7 +208,7 @@ class Project {
             return clean === name || clean === file || file.startsWith(`${clean}/`);
         });
     }
-    /** @param loader returns why files failed */
+    /** @param loader Returns why files failed. */
     load(what, loader) {
         let failures;
         try {
@@ -212,7 +219,7 @@ class Project {
             return;
         }
         if (failures.length) {
-            this.notes.push(`${(0, text_1.plural)(failures.length, "file")} of ${what} failed to load, so their functions are unknown. First: ${failures[0]}`);
+            this.notes.push(`${(0, text_1.plural)(failures.length, "file")} of ${what} failed to load: what they add is unknown. First: ${failures[0]}`);
         }
     }
 }
