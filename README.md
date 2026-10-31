@@ -144,7 +144,7 @@ Without rule names, a directive applies to every rule. Separate several rule nam
 
 <h3 align="center">Config</h3><hr>
 
-Paths in `forgelint.config.js` (or `.cjs`, `.mjs`) are relative to its folder. Every option is optional, and a list option also takes a single string. In a bot with `"type": "module"`, export it with `export default`, as `npx forgelint init` does.
+ForgeLint looks for `forgelint.config.js` (or `.cjs`, `.mjs`) in the current folder and the ones above it, up to the folder with `package.json`. Paths in it are relative to its folder. Every option is optional, and a list option also takes a single string. In a bot with `"type": "module"`, export it with `export default`, as `npx forgelint init` does.
 
 | Option | |
 |---|---|

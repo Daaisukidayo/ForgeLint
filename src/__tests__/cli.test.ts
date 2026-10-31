@@ -129,8 +129,45 @@ describe("forgelint", () => {
         assert.match(forgelint(["init"], root).stdout, /kept {4}forgelint\.config\.cjs/)
     })
 
+    it("finds the config in a folder above", () => {
+        assert.match(forgelint([], join(EXAMPLE, "commands")).stdout, /11 errors, 2 warnings, 2 info/)
+    })
+
+    it("init takes flags before it & --config, & picks the export by extension", () => {
+        const root = folder({})
+
+        assert.equal(forgelint(["--json", "init"], root).status, 0)
+        assert.ok(existsSync(join(root, "forgelint.config.js")))
+
+        assert.equal(forgelint(["init", "--config", "lint.config.mjs"], root).status, 0)
+        assert.match(readFileSync(join(root, "lint.config.mjs"), "utf8"), /^export default config$/m)
+    })
+
+    it("w/ --json, prints only JSON to stdout & notes to stderr", () => {
+        const root = folder({
+            "forgelint.config.js": `module.exports = { extensions: ["forge.nope"] }`,
+            "a.js": "module.exports = { code: `$ping` }",
+        })
+        const run = forgelint(["--json"], root)
+
+        assert.deepEqual(JSON.parse(run.stdout), [])
+        assert.match(run.stderr, /forge\.nope isn't installed/)
+    })
+
+    it("exits even when a loaded file keeps the process alive", () => {
+        const root = folder({
+            "forgelint.config.js": `module.exports = { functions: "./functions" }`,
+            "functions/tick.js": `setInterval(() => {}, 1000)\nmodule.exports = { name: "tick", code: "" }`,
+            "a.js": "module.exports = { code: `$ping` }",
+        })
+        const run = spawnSync(process.execPath, [CLI], { cwd: root, encoding: "utf8", timeout: 20_000 })
+
+        assert.equal(run.status, 0, "killed by the timeout")
+    })
+
     it("refuses unknown options & a missing config", () => {
         assert.match(forgelint(["--watch"]).stderr, /--watch is not an option/)
         assert.match(forgelint(["--config", "nope.js"]).stderr, /There is no config file/)
+        assert.match(forgelint(["--config", "--json"]).stderr, /--config needs a file/)
     })
 })

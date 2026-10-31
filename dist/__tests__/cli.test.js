@@ -103,9 +103,38 @@ module.exports = {
         strict_1.default.equal(forgelint([], root).status, 1);
         strict_1.default.match(forgelint(["init"], root).stdout, /kept {4}forgelint\.config\.cjs/);
     });
+    (0, node_test_1.it)("finds the config in a folder above", () => {
+        strict_1.default.match(forgelint([], (0, node_path_1.join)(harness_1.EXAMPLE, "commands")).stdout, /11 errors, 2 warnings, 2 info/);
+    });
+    (0, node_test_1.it)("init takes flags before it & --config, & picks the export by extension", () => {
+        const root = (0, harness_1.folder)({});
+        strict_1.default.equal(forgelint(["--json", "init"], root).status, 0);
+        strict_1.default.ok((0, node_fs_1.existsSync)((0, node_path_1.join)(root, "forgelint.config.js")));
+        strict_1.default.equal(forgelint(["init", "--config", "lint.config.mjs"], root).status, 0);
+        strict_1.default.match((0, node_fs_1.readFileSync)((0, node_path_1.join)(root, "lint.config.mjs"), "utf8"), /^export default config$/m);
+    });
+    (0, node_test_1.it)("w/ --json, prints only JSON to stdout & notes to stderr", () => {
+        const root = (0, harness_1.folder)({
+            "forgelint.config.js": `module.exports = { extensions: ["forge.nope"] }`,
+            "a.js": "module.exports = { code: `$ping` }",
+        });
+        const run = forgelint(["--json"], root);
+        strict_1.default.deepEqual(JSON.parse(run.stdout), []);
+        strict_1.default.match(run.stderr, /forge\.nope isn't installed/);
+    });
+    (0, node_test_1.it)("exits even when a loaded file keeps the process alive", () => {
+        const root = (0, harness_1.folder)({
+            "forgelint.config.js": `module.exports = { functions: "./functions" }`,
+            "functions/tick.js": `setInterval(() => {}, 1000)\nmodule.exports = { name: "tick", code: "" }`,
+            "a.js": "module.exports = { code: `$ping` }",
+        });
+        const run = (0, node_child_process_1.spawnSync)(process.execPath, [CLI], { cwd: root, encoding: "utf8", timeout: 20_000 });
+        strict_1.default.equal(run.status, 0, "killed by the timeout");
+    });
     (0, node_test_1.it)("refuses unknown options & a missing config", () => {
         strict_1.default.match(forgelint(["--watch"]).stderr, /--watch is not an option/);
         strict_1.default.match(forgelint(["--config", "nope.js"]).stderr, /There is no config file/);
+        strict_1.default.match(forgelint(["--config", "--json"]).stderr, /--config needs a file/);
     });
 });
 //# sourceMappingURL=cli.test.js.map

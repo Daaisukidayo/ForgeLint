@@ -85,8 +85,10 @@ class Reporter {
         if (unformatted)
             parts.push((0, paint_1.yellow)(`${(0, text_1.plural)(unformatted, "file")} not formatted`));
         this.write(`${errors || unformatted ? (0, paint_1.red)("✗") : (0, paint_1.yellow)("!")} ${parts.join(", ")} ${seconds}`);
-        if (infos && !fixed)
-            this.write((0, paint_1.grey)("forgelint --fix fixes the info ones"));
+        // of the rules, `--fix` only fixes the case of names
+        if (!fixed && problems.some((problem) => problem.rule === types_1.Rule.functionCase)) {
+            this.write((0, paint_1.grey)("forgelint --fix fixes the function-case ones"));
+        }
         return errors;
     }
 }

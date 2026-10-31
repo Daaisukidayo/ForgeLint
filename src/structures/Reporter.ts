@@ -1,6 +1,6 @@
 import { bold, cyan, green, grey, red, yellow } from "../functions/paint"
 import { plural } from "../functions/text"
-import { Severity } from "../types"
+import { Rule, Severity } from "../types"
 import { IFileReport } from "./Project"
 
 const COLORS: Record<Severity, (text: string) => string> = {
@@ -88,7 +88,10 @@ export class Reporter {
         if (unformatted) parts.push(yellow(`${plural(unformatted, "file")} not formatted`))
 
         this.write(`${errors || unformatted ? red("✗") : yellow("!")} ${parts.join(", ")} ${seconds}`)
-        if (infos && !fixed) this.write(grey("forgelint --fix fixes the info ones"))
+        // of the rules, `--fix` only fixes the case of names
+        if (!fixed && problems.some((problem) => problem.rule === Rule.functionCase)) {
+            this.write(grey("forgelint --fix fixes the function-case ones"))
+        }
         return errors
     }
 }
